@@ -6,7 +6,7 @@ from rscluster import RsCluster
 
 
 class Master:
-    def __init__(self, ctype):
+    def __init__(self):
         self._zk = ZkClient(ZK_ADDR)
         self._cluster = RsCluster(self._zk)
 
