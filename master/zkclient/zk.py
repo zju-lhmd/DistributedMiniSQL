@@ -7,7 +7,7 @@ class ZkClient:
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(ZkClient, cls).__new__(cls, args, kwargs)
+            cls._instance = super(ZkClient, cls).__new__(cls)
         return cls._instance
 
     def __init__(self, hosts):
@@ -16,4 +16,4 @@ class ZkClient:
     @staticmethod
     def get():
         assert(ZkClient._instance is not None)
-        return ZkClient._instance
+        return ZkClient._instance.zk
