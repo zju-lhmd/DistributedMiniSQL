@@ -2,6 +2,7 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 from kazoo.client import ChildrenWatch
 from kazoo.client import DataWatch
+from kazoo.exceptions import NodeExistsError
 
 
 class ZkClient:
@@ -24,7 +25,11 @@ class ZkClient:
         self._zk.stop()
 
     def create(self, path, data=b'', ephemeral=False, sequence=False):
-        return self._zk.create(path, value=data, ephemeral=ephemeral, sequence=sequence)
+        try:
+            self._zk.create(path, value=data, ephemeral=ephemeral, sequence=sequence)
+            return True
+        except NodeExistsError:
+            return False
 
     def delete(self, path, recursive=False):
         self._zk.delete(path, recursive=recursive)
@@ -32,8 +37,8 @@ class ZkClient:
     def get(self, path):
         return self._zk.get(path)
 
-    def get_children(self, path, include_data=False):
-        return self._zk.get_children(path, include_data=include_data)
+    def get_children(self, path):
+        return self._zk.get_children(path)
 
     def add_data_watch(self, path, callback):
         DataWatch(self._zk, path, func=callback)
