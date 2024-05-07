@@ -1,0 +1,7 @@
+ZK_HOST = '127.0.0.1'
+ZK_PORT = '2181'
+ZK_ADDR = f'{ZK_HOST}:{ZK_PORT}'
+ZK_RS_DIR = '/rs'
+ZK_SEPERATOR = ' '
+
+DDB_COPY_NUM = 2
