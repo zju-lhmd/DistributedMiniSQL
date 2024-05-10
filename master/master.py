@@ -1,6 +1,6 @@
 import signal
 
-from config import *
+from config import ZK_ADDR
 from zkclient import ZkClient
 from regioncluster import RegionCluster
 
@@ -15,7 +15,7 @@ class Master:
     def start(self):
         self._zk.start()
         # create Znode '/master'
-        # TODO: write snapshot
+        # TODO: write snapshot to /master
         ok = self._zk.create('/master', ephemeral=True)
         if ok is False:
             self.stop()     # exit when master already exists

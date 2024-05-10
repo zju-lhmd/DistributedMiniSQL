@@ -1,6 +1,6 @@
 from threading import Semaphore
 
-from config import *
+from config import ZK_RS_DIR, ZK_SEPARATOR, DDB_COPY_NUM
 from zkclient import ZkClient
 from entity import Region, Table
 from watcher import RegionWatcher
@@ -18,6 +18,10 @@ class ClusterLock:
 
 
 class RegionCluster(ClusterLock):
+    ZK_RS_DIR = ZK_RS_DIR
+    ZK_SEPARATOR = ZK_SEPARATOR
+    DDB_COPY_NUM = DDB_COPY_NUM
+
     def __init__(self, zk):
         assert isinstance(zk, ZkClient)
 
@@ -30,10 +34,10 @@ class RegionCluster(ClusterLock):
         # read all regions registered on zookeeper
         regs = self._zk.get_children(ZK_RS_DIR)
         for reg in regs:
-            data, stat = self._zk.get(f'{ZK_RS_DIR}/{reg}')
+            data, stat = self._zk.get(f'{RegionCluster.ZK_RS_DIR}/{reg}')
             tbls = None
             if data is not None:
-                tbls = data.decode('utf-8').split(ZK_SEPERATOR)
+                tbls = data.decode('utf-8').split(RegionCluster.ZK_SEPARATOR)
             self._regions[reg] = Region(reg, tbls)
 
             # register tables for searching
@@ -42,40 +46,65 @@ class RegionCluster(ClusterLock):
                     self._tables[tbl] = Table(tbl)
                 self._tables[tbl].slaves.append(reg)
 
-        # mark tables that have too few slaves
-        needs = []
+        # recover tables that have too few slaves
+        needs = [table for table in self._tables.values() if len(table.slaves) < RegionCluster.DDB_COPY_NUM]
+        for table in needs:
+            reg = self.find_min_load_without(table.slaves)
+
+            # TODO: call thrift to recover
+
+            table.slaves.append(reg)
+            self._regions[reg].tables.append(table.name)
 
         # upgrade one slave on each table to satisfy Master-Slave structure
-        for tbl in self._tables.values():
-            # mark
-            if len(tbl.slaves) < DDB_COPY_NUM:
-                needs.append(tbl.name)
-
+        for table in self._tables.values():
             # select a slave to be upgraded to master
-            candidate = tbl.slaves[0]
-            min_load = self._regions[candidate].load()
-            for slave in tbl.slaves:
-                load = self._regions[slave].load()
-                if load < min_load:
-                    min_load = load
-                    candidate = slave
+            slave = min(table.slaves, key=lambda x: self._regions[x].load())
 
-            # TODO: call thrift
+            # TODO: call thrift to upgrade
 
-            nil = tbl.upgrade(candidate)
-            self._regions[candidate].increase_masters(1)
+            table.upgrade(slave)
+            self._regions[slave].increase_masters(1)
 
-        # recover
-        # TODO: recover tables that have too few slaves
-
-        print(self._regions)
-        print(self._tables)
-        print(needs)
+        self.print()
 
         # add watchers
         self._zk.add_children_watch(ZK_RS_DIR, RegionWatcher(self))
 
-    def search_table(self, tbl):
-        if tbl in self._tables:
-            return self._tables[tbl]
-        return None
+    def zk(self):
+        return self._zk
+
+    def region_list(self):
+        return self._regions.keys()
+
+    def find_min_load(self):
+        return self.find_min_load_among(self.region_list())
+
+    def find_min_load_without(self, regs):
+        left = list(set(self.region_list()) - set(regs))
+        return self.find_min_load_among(left)
+
+    def find_min_load_among(self, regs):
+        return min(regs, key=lambda x: self._regions[x].load())
+
+    def get_region(self, reg):
+        return self._regions.get(reg)
+
+    def add_region(self, reg):
+        self._regions[reg] = Region(reg)
+
+    def remove_region(self, reg):
+        self._regions.pop(reg)
+
+    def get_table(self, tbl):
+        return self._tables.get(tbl)
+
+    def add_table(self, tbl):
+        pass
+
+    def remove_table(self, tbl):
+        pass
+
+    def print(self):
+        print(self._regions)
+        print(self._tables)
