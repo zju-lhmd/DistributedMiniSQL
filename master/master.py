@@ -2,13 +2,13 @@ import signal
 
 from config import *
 from zkclient import ZkClient
-from rscluster import RsCluster
+from regioncluster import RegionCluster
 
 
 class Master:
     def __init__(self):
         self._zk = ZkClient(ZK_ADDR)
-        self._cluster = RsCluster(self._zk)
+        self._cluster = RegionCluster(self._zk)
 
         signal.signal(signal.SIGINT, self.stop)
 

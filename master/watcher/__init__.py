@@ -1,1 +1,1 @@
-from .rswt import RsWatcher
+from .regionwt import RegionWatcher

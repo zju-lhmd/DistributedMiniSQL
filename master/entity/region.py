@@ -9,11 +9,8 @@ class Region:
     def load(self):
         return len(self.tables) + self.masters
 
-    def inc(self):
-        self.masters += 1
-
-    def dec(self):
-        self.masters -= 1
+    def increase_masters(self, dn):
+        self.masters += dn
 
     def __str__(self):
         return f'<Region addr:{self.addr}, tbls:{self.tables}>'

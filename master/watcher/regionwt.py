@@ -1,15 +1,15 @@
 from .basewt import BaseWatcher
 
 
-class RsWatcher(BaseWatcher):
+class RegionWatcher(BaseWatcher):
     def __init__(self, cluster):
         self._cluster = cluster
-        self.ignore = True  # simply ignore the very first time call
+        self._ignore = True  # simply ignore the very first time call
 
     def __call__(self, children):
-        if self.ignore is True:
+        if self._ignore is True:
             print('RsWatcher REGISTERED')
-            self.ignore = False
+            self._ignore = False
             return
 
         print('RsWatcher CALLED')

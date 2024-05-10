@@ -1,31 +1,46 @@
+from threading import Semaphore
+
 from config import *
 from zkclient import ZkClient
 from entity import Region, Table
-from watcher import RsWatcher
+from watcher import RegionWatcher
 
 
-class RsCluster:
+class ClusterLock:
+    def __init__(self):
+        self._sem = Semaphore(1)
+
+    def acquire(self):
+        self._sem.acquire()
+
+    def release(self):
+        self._sem.release()
+
+
+class RegionCluster(ClusterLock):
     def __init__(self, zk):
         assert isinstance(zk, ZkClient)
+
+        super(RegionCluster, self).__init__()
         self._zk = zk
         self._regions = {}
         self._tables = {}
 
     def init(self):
         # read all regions registered on zookeeper
-        rss = self._zk.get_children(ZK_RS_DIR)
-        for rs in rss:
-            data, stat = self._zk.get(f'{ZK_RS_DIR}/{rs}')
+        regs = self._zk.get_children(ZK_RS_DIR)
+        for reg in regs:
+            data, stat = self._zk.get(f'{ZK_RS_DIR}/{reg}')
             tbls = None
             if data is not None:
                 tbls = data.decode('utf-8').split(ZK_SEPERATOR)
-            self._regions[rs] = Region(rs, tbls)
+            self._regions[reg] = Region(reg, tbls)
 
             # register tables for searching
-            for tbl in self._regions[rs].tables:
+            for tbl in self._regions[reg].tables:
                 if tbl not in self._tables:
                     self._tables[tbl] = Table(tbl)
-                self._tables[tbl].slaves.append(rs)
+                self._tables[tbl].slaves.append(reg)
 
         # mark tables that have too few slaves
         needs = []
@@ -48,7 +63,7 @@ class RsCluster:
             # TODO: call thrift
 
             nil = tbl.upgrade(candidate)
-            self._regions[candidate].inc()
+            self._regions[candidate].increase_masters(1)
 
         # recover
         # TODO: recover tables that have too few slaves
@@ -58,7 +73,7 @@ class RsCluster:
         print(needs)
 
         # add watchers
-        self._zk.add_children_watch(ZK_RS_DIR, RsWatcher(self))
+        self._zk.add_children_watch(ZK_RS_DIR, RegionWatcher(self))
 
     def search_table(self, tbl):
         if tbl in self._tables:
