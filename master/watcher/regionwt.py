@@ -13,6 +13,5 @@ class RsWatcher(BaseWatcher):
             return
 
         print('RsWatcher CALLED')
-        with self._cluster.sem:
-            # TODO: adjust our regions as well as tables
-            pass
+        # TODO: adjust our regions as well as tables
+        pass

@@ -1,5 +1,3 @@
-import threading
-
 from config import *
 from zkclient import ZkClient
 from entity import Region, Table
@@ -9,7 +7,6 @@ from watcher import RsWatcher
 class RsCluster:
     def __init__(self, zk):
         assert isinstance(zk, ZkClient)
-        self.sem = threading.Semaphore(1)
         self._zk = zk
         self._regions = {}
         self._tables = {}
@@ -54,7 +51,7 @@ class RsCluster:
             self._regions[candidate].inc()
 
         # recover
-        self.recover(needs)
+        # TODO: recover tables that have too few slaves
 
         print(self._regions)
         print(self._tables)
@@ -62,16 +59,6 @@ class RsCluster:
 
         # add watchers
         self._zk.add_children_watch(ZK_RS_DIR, RsWatcher(self))
-
-    # recover tables that have too few slaves
-    def recover(self, tbls):
-        pass
-
-    def get_regions(self):
-        return self._regions
-
-    def get_tables(self):
-        return self._tables
 
     def search_table(self, tbl):
         if tbl in self._tables:
