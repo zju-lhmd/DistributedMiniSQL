@@ -1,6 +1,3 @@
-include "com.thrift"
-
-
 /**
  * Client -> Master
  * Operations:
@@ -8,8 +5,14 @@ include "com.thrift"
  *  CREATE  := create table
  *  DROP    := drop table
  **/
-service Consultant {
-    list<string> query(1: string table);
-    list<string> create(1: string table, 2: string sql);
-    i32 drop(1: string table);
+service c2m {
+    oneway void query(1: string client_addr, 2: string table);
+    oneway void create(1: string client_addr, 2: string table, 3: string sql);
+    oneway void drop(1: string client_addr, 2: string table);
+}
+
+service m2c {
+    oneway void queryResp(1: i32 state, 2: list<string> region_addrs);
+    oneway void createResp(1: i32 state, 2: list<string> region_addrs);
+    oneway void dropResp(1: i32 state);
 }

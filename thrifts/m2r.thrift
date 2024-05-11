@@ -6,9 +6,16 @@
  *  RECOVER := recover data from somewhere
  *  UPGRADE := become master from slave
  **/
-service Worker {
-    i32 create(1: string sql, 2: list<string> regions);
-    i32 drop(1: string table);
-    i32 recover(1: string table, 2: string region);
-    i32 upgrade(1: string table);
+service m2r {
+    oneway void create(1: string table, 2: string sql, 3: list<string> region_addrs);
+    oneway void drop(1: string table);
+    oneway void recover(1: string table, 2: list<string> region_addrs);
+    oneway void upgrade(1: string table, 2: list<string> slave_addrs);
+}
+
+service r2m {
+    oneway void createResp(1: i32 state);
+    oneway void dropResp(1: i32 state);
+    oneway void recoverResp(1: i32 state);
+    oneway void upgradeResp(1: i32 state);
 }
