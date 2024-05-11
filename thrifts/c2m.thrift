@@ -4,7 +4,7 @@ include "com.thrift"
 /**
  * Client -> Master
  * Operations:
- *  QUERY   := search for table location        ???
+ *  QUERY   := search for table location
  *  CREATE  := create table
  *  DROP    := drop table
  **/

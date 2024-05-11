@@ -1,6 +1,7 @@
+import heapq
 from threading import Semaphore
 
-from config import ZK_RS_DIR, ZK_SEPARATOR, DDB_COPY_NUM
+from config import ZK_REGION_DIR, ZK_SEPARATOR, DDB_COPY_NUM
 from zkclient import ZkClient
 from entity import Region, Table
 from watcher import RegionWatcher
@@ -18,7 +19,7 @@ class ClusterLock:
 
 
 class RegionCluster(ClusterLock):
-    ZK_RS_DIR = ZK_RS_DIR
+    ZK_REGION_DIR = ZK_REGION_DIR
     ZK_SEPARATOR = ZK_SEPARATOR
     DDB_COPY_NUM = DDB_COPY_NUM
 
@@ -32,9 +33,9 @@ class RegionCluster(ClusterLock):
 
     def init(self):
         # read all regions registered on zookeeper
-        regs = self._zk.get_children(ZK_RS_DIR)
+        regs = self._zk.get_children(RegionCluster.ZK_REGION_DIR)
         for reg in regs:
-            data, stat = self._zk.get(f'{RegionCluster.ZK_RS_DIR}/{reg}')
+            data, stat = self._zk.get(f'{RegionCluster.ZK_REGION_DIR}/{reg}')
             tbls = None
             if data is not None:
                 tbls = data.decode('utf-8').split(RegionCluster.ZK_SEPARATOR)
@@ -69,7 +70,7 @@ class RegionCluster(ClusterLock):
         self.print()
 
         # add watchers
-        self._zk.add_children_watch(ZK_RS_DIR, RegionWatcher(self))
+        self._zk.add_children_watch(RegionCluster.ZK_REGION_DIR, RegionWatcher(self))
 
     def zk(self):
         return self._zk
@@ -86,6 +87,11 @@ class RegionCluster(ClusterLock):
 
     def find_min_load_among(self, regs):
         return min(regs, key=lambda x: self._regions[x].load())
+
+    def find_n_min_load(self):
+        heap = [(self._regions[reg].load(), reg) for reg in self.region_list()]
+        heapq.heapify(heap)
+        return [heapq.heappop(heap)[1] for _ in range(RegionCluster.DDB_COPY_NUM)]
 
     def get_region(self, reg):
         return self._regions.get(reg)
