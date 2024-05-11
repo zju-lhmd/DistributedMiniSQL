@@ -1,0 +1,1 @@
+../../thrifts/m2r.thrift
