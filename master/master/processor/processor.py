@@ -1,8 +1,8 @@
-from api.m2r import m2r
-from api.c2m import m2c
 from .util import remote_call
-from task_queue.task import *
-from waiter_dict.waiter import *
+from ..api.m2r import m2r
+from ..api.c2m import m2c
+from ..task_queue.task import *
+from ..waiter_dict.waiter import *
 
 
 class ProcessorDict:
@@ -22,6 +22,7 @@ class ProcessorDict:
         }
 
     def process(self, task):
+        print('[Master] Process ' + task.__class__.__name__)
         self._dict[task.__class__.__name__].process(task)
 
 
@@ -53,7 +54,7 @@ class ClientCreateProcessor(BaseProcessor):
             remote_call(task.client, m2c.Client, 'createResp', 1, [])
             return
 
-        regs = self._cluster.find_n_min_load(self._cluster.regions)
+        regs = self._cluster.find_n_min_load()
 
         wid = self._waiter.gen_id()
         waiter = RegionCreateWaiter(wid, task.client, regs, table)
@@ -124,7 +125,7 @@ class RegionOffProcessor(BaseProcessor):
                 waiter = RegionUpgradeWaiter(wid, master, tbl)
                 self._waiter.add(waiter)
 
-                new_slaves = table.slaves + [new_slave]
+                new_slaves = [new_slave] + table.slaves
                 new_slaves.remove(master)
                 remote_call(master, m2r.Client, 'upgrade', tbl, new_slaves, wid)
 

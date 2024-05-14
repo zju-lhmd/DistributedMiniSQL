@@ -15,7 +15,7 @@ from .api.m2r import m2r
 
 
 class Master:
-    def __init__(self, config):
+    def __init__(self):
         self.zk_addr = '127.0.0.1:2181'
         self.copy_num = 2
         self.server_port = 3932
@@ -30,8 +30,8 @@ class Master:
         signal.signal(signal.SIGINT, self.stop)
 
     def start(self):
-        self._zk.start()
         print('[Master] Zkclient start')
+        self._zk.start()
 
         # attempt to register master
         server_addr = [
@@ -43,10 +43,10 @@ class Master:
             self.stop()
         print('[Master] Register on ZooKeeper')
 
-        # init metadata
+        # initialize metadata
         self._init_cluster()
         self._zk.add_children_watch('/regions', RegionsWatcher(self._queue, self._cluster.regions))
-        print('[Master] Metadata initialized')
+        print('[Master] Metadata initialize')
 
         # start server
         print('[Server] Listen on ' + server_addr)
@@ -82,7 +82,7 @@ class Master:
                 waiter = RegionUpgradeWaiter(wid, master, tbl)
                 self._waiter.add(waiter)
 
-                new_slaves = [] + table.slaves
+                new_slaves = table.slaves[:]
                 new_slaves.remove(master)
                 remote_call(master, m2r.Client, 'upgrade', tbl, new_slaves, wid)
 

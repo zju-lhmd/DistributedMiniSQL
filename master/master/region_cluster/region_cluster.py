@@ -12,11 +12,11 @@ class RegionCluster:
 
     @property
     def regions(self):
-        return self._regions.keys()
+        return list(self._regions.keys())
 
     @property
     def tables(self):
-        return self._tables.keys()
+        return list(self._tables.keys())
 
     def region(self, reg):
         return self._regions.get(reg)
@@ -51,20 +51,10 @@ class RegionCluster:
         left = list(set(self.regions) - set(regs))
         return self.find_min_load_among(left)
 
-    def find_n_min_load_among(self, regs, n=0):
-        if n == 0:
-            n = self.copy_num
-
-        heap = [(self.region(reg).load, reg) for reg in regs]
+    def find_n_min_load(self):
+        heap = [(self.region(reg).load, reg) for reg in self.regions]
         heapq.heapify(heap)
-        return [heapq.heappop(heap)[1] for _ in range(n)]
-
-    def find_n_min_load_without(self, regs, n=0):
-        if n == 0:
-            n = self.copy_num
-
-        left = list(set(self.regions) - set(regs))
-        return self.find_n_min_load_among(left, n)
+        return [heapq.heappop(heap)[1] for _ in range(self.copy_num)]
 
     def print(self):
         print(self._regions)

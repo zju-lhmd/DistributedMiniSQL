@@ -1,5 +1,7 @@
-from api.c2m import c2m
-from task_queue.task import ClientQueryTask, ClientCreateTask, ClientDropTask
+from ..api.c2m import c2m
+from ..task_queue.task import ClientQueryTask
+from ..task_queue.task import ClientCreateTask
+from ..task_queue.task import ClientDropTask
 
 
 class C2MHandler(c2m.Iface):

@@ -1,5 +1,5 @@
-from task_queue.task import RegionOnTask
-from task_queue.task import RegionOffTask
+from .task_queue.task import RegionOnTask
+from .task_queue.task import RegionOffTask
 
 
 class BaseWatcher:
@@ -10,7 +10,7 @@ class BaseWatcher:
 class RegionsWatcher(BaseWatcher):
     def __init__(self, queue, regions):
         self._queue = queue
-        self._regions = [] + regions
+        self._regions = regions
         self._ignore = True  # simply ignore the very first time call
 
     def __call__(self, children):

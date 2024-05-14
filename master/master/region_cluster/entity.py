@@ -21,10 +21,6 @@ class Table:
         self.slaves = []
 
     @property
-    def isorphan(self):
-        return len(self.slaves) == 0 and not self.master
-
-    @property
     def regions(self):
         return [self.master] + self.slaves
 

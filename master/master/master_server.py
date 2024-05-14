@@ -6,9 +6,9 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 from thrift.TMultiplexedProcessor import TMultiplexedProcessor
 
-from api.c2m import c2m
+from .api.c2m import c2m
 from .handler import C2MHandler
-from api.m2r import r2m
+from .api.m2r import r2m
 from .handler import R2MHandler
 
 

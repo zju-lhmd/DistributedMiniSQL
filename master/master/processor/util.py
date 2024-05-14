@@ -1,6 +1,6 @@
 from thrift.transport import TSocket
 from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
+from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
 
 
 def parse_addr(addr):
@@ -14,8 +14,9 @@ def remote_call(addr, cls, meth, *args, **kwargs):
     transport = TSocket.TSocket(host, port)
     transport = TTransport.TBufferedTransport(transport)
     protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    service_protocol = TMultiplexedProtocol.TMultiplexedProtocol(protocol, 'M')
 
-    client = cls(protocol)
+    client = cls(service_protocol)
 
     # connect
     transport.open()

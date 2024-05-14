@@ -1,8 +1,8 @@
-from api.m2r import r2m
-from task_queue.task import RegionCreateDoneTask
-from task_queue.task import RegionDropDoneTask
-from task_queue.task import RegionRecoverDoneTask
-from task_queue.task import RegionUpgradeDoneTask
+from ..api.m2r import r2m
+from ..task_queue.task import RegionCreateDoneTask
+from ..task_queue.task import RegionDropDoneTask
+from ..task_queue.task import RegionRecoverDoneTask
+from ..task_queue.task import RegionUpgradeDoneTask
 
 
 class R2MHandler(r2m.Iface):
