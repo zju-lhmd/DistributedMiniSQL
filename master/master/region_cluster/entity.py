@@ -22,27 +22,27 @@ class Table:
 
     @property
     def isorphan(self):
-        return self.master == '' and len(self.slaves) == 0
+        return len(self.slaves) == 0 and not self.master
 
     @property
     def regions(self):
         return [self.master] + self.slaves
 
+    @property
+    def valid_regions(self):
+        return ([self.master] if self.master else []) + self.slaves
+
+    def remove(self, reg):
+        if self.master == reg:
+            self.master = ''
+        else:
+            self.slaves.remove(reg)
+
     def upgrade(self, slave):
         assert slave in self.slaves
 
         self.slaves.remove(slave)
-        down = self.downgrade()
         self.master = slave
-        return down
-
-    def downgrade(self):
-        swapper = ''
-        if self.master != '':
-            swapper = self.master
-            self.slaves.append(self.master)
-            self.master = ''
-        return swapper
 
     def __str__(self):
         return f'<Table name:{self.name}, master:{self.master}, slaves:{self.slaves}>'

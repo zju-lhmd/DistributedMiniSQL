@@ -12,11 +12,11 @@ class ZkClient:
         @self._zk.add_listener
         def state_check(state):
             if state == KazooState.LOST:
-                print('ZkClient . -> LOST')
+                print('[Zkclient] . -> LOST')
             elif state == KazooState.CONNECTED:
-                print('ZkClient . -> CONNECTED')
+                print('[Zkclient] . -> CONNECTED')
             elif state == KazooState.SUSPENDED:
-                print('ZkClient . -> SUSPENDED')
+                print('[Zkclient] . -> SUSPENDED')
 
     def start(self):
         self._zk.start()

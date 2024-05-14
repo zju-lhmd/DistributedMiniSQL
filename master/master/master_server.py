@@ -13,10 +13,10 @@ from .handler import R2MHandler
 
 
 class MasterServer:
-    def __init__(self, port, queue, cluster):
+    def __init__(self, port, queue, waiter):
         processors = {
             'C': c2m.Processor(C2MHandler(queue)),
-            'R': r2m.Processor(R2MHandler(cluster))
+            'R': r2m.Processor(R2MHandler(queue, waiter))
         }
         self._thread = ServerThread(port, processors)
 
@@ -27,8 +27,7 @@ class MasterServer:
 class ServerThread(threading.Thread):
     def __init__(self, port, processors):
         super().__init__(daemon=True)
-        self.port = port
-
+        self._port = port
         self._processors = processors
 
     def run(self):
@@ -38,12 +37,11 @@ class ServerThread(threading.Thread):
         for name, processor in self._processors.items():
             processor_map.registerProcessor(name, processor)
 
-        transport = TSocket.TServerSocket(port=self.port)
+        transport = TSocket.TServerSocket(port=self._port)
         tfactory = TTransport.TBufferedTransportFactory()
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 
         server = TServer.TThreadPoolServer(processor_map, transport, tfactory, pfactory)
         server.daemon = True
 
-        print('START LISTENING')
         server.serve()
