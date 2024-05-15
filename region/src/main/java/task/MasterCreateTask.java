@@ -12,6 +12,17 @@ public class MasterCreateTask extends MasterTask {
         this.regionAddr = new ArrayList<>(regionAddr);
         this.table = table;
         this.aid = aid;
-        this.masterType = Constants.MasterType.CREATE;
+        this.type = Constants.MasterType.CREATE;
+    }
+
+    @Override
+    public String toString() {
+        return "MasterCreateTask{" +
+                "sql='" + sql + '\'' +
+                ", regionAddr=" + regionAddr +
+                ", aid=" + aid +
+                ", table='" + table + '\'' +
+                ", masterType=" + type +
+                '}';
     }
 }

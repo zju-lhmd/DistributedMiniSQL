@@ -21,6 +21,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class RegionServer {
     TMultiplexedProcessor processor;
+
     public RegionServer(BlockingQueue<ClientTask> q1, BlockingQueue<MasterTask> q2, BlockingQueue<RegionTask> q3) {
         C2RHandler clientHandler = new C2RHandler(q1);
         TProcessor clientProcessor = new c2r.Processor<>(clientHandler);
@@ -32,9 +33,9 @@ public class RegionServer {
         TProcessor regionProcessor = new r2r.Processor<>(regionHandler);
 
         processor = new TMultiplexedProcessor();
-        processor.registerProcessor("client", clientProcessor);
-        processor.registerProcessor("master", masterProcessor);
-        processor.registerProcessor("region", regionProcessor);
+        processor.registerProcessor("C", clientProcessor);
+        processor.registerProcessor("M", masterProcessor);
+        processor.registerProcessor("R", regionProcessor);
     }
 
     public void start(int port) {

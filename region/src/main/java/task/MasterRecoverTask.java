@@ -11,6 +11,16 @@ public class MasterRecoverTask extends MasterTask {
         this.table = table;
         this.regionAddr = new ArrayList<>(regionAddr);
         this.aid = aid;
-        this.masterType = Constants.MasterType.RECOVER;
+        this.type = Constants.MasterType.RECOVER;
+    }
+
+    @Override
+    public String toString() {
+        return "MasterRecoverTask{" +
+                "regionAddr=" + regionAddr +
+                ", aid=" + aid +
+                ", table='" + table + '\'' +
+                ", masterType=" + type +
+                '}';
     }
 }

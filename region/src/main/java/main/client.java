@@ -19,11 +19,11 @@ public class client {
         // 协议要和服务端一致
         //使用二进制协议
         TProtocol protocol = new TBinaryProtocol(transport);
-        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "client");
+        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "C");
         //创建Client
         c2r.Client client = new c2r.Client(server_protocol);
         transport.open();
-        client.read("127.0.0.1", "select * from students;");
+//        client.write("127.0.0.1", "create table students(id int primary key, name varchar(10), age int);");
         //关闭资源
         transport.close();
     }

@@ -1,15 +1,12 @@
 package main;
 
+import database.DBConnection;
 import task.ClientTask;
 import task.MasterTask;
 import task.RegionTask;
 
+import java.sql.SQLException;
 import java.util.concurrent.ArrayBlockingQueue;
-
-/**
- * Hello world!
- *
- */
 
 public class Region
 {
@@ -23,25 +20,83 @@ public class Region
 
         RegionServer server = new RegionServer(clientQueue, masterQueue, regionQueue);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        System.out.println("2");
-                        ClientTask task = clientQueue.take();
-                        System.out.println(task.clientAddr + " " + task.sql);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+        new Thread(() -> {
+            while (true) {
+                ClientTask task = null;
+                try {
+                    task = clientQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                switch (task.type) {
+                    case READ:
+                        System.out.println("[READ] " + task);
+                        try {
+                            DBConnection.query(task.sql);
+                        } catch (SQLException e) {
+                            System.out.println(e.getMessage());
+//                            throw new RuntimeException(e);
+                        }
+                        break;
+                    case WRITE:
+                        System.out.println("[WRITE] " + task);
+                        try {
+                            DBConnection.update(task.sql);
+                        } catch (SQLException e) {
+                            System.out.println(e.getMessage());
+//                            throw new RuntimeException(e);
+                        }
+                        break;
                 }
             }
         }).start();
+//
+//        new Thread(() -> {
+//            while (true) {
+//                MasterTask task = null;
+//                try {
+//                    task = masterQueue.take();
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                switch (task.type) {
+//                    case CREATE:
+//                        System.out.println("[CREATE] " + task);
+//                        break;
+//                    case DROP:
+//                        System.out.println("[DROP] " + task);
+//                        break;
+//                    case RECOVER:
+//                        System.out.println("[RECOVER] " + task);
+//                        break;
+//                    case UPGRADE:
+//                        System.out.println("[UPGRADE] " + task);
+//                        break;
+//                }
+//            }
+//        }).start();
+
+//        new Thread(() -> {
+//            while (true) {
+//                RegionTask task = null;
+//                try {
+//                    task = regionQueue.take();
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                switch (task.type) {
+//                    case SYNC:
+//
+//                        System.out.println("[SYNC] " + task);
+//                        break;
+//                    case COPY:
+//                        System.out.println("[COPY] " + task);
+//                        break;
+//                }
+//            }
+//        }).start();
 
         System.out.println("region server listening on " + port);
         server.start(port);
-
-        System.out.println("region ready to handle task");
-
     }
 }

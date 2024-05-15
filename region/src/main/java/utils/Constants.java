@@ -7,8 +7,14 @@ public class Constants {
      * RECOVER: recover data from somewhere
      * UPGRADE: become master from slave
      * */
-    public  enum MasterType {
+    public enum MasterType {
         CREATE, DROP, RECOVER, UPGRADE;
+    }
+    public enum ClientType {
+        READ, WRITE;
+    }
+    public enum RegionType {
+        SYNC, COPY;
     }
     public enum ConnectType {
         CLIENT, MASTER, REGION;

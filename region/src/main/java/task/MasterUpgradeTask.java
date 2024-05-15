@@ -11,6 +11,16 @@ public class MasterUpgradeTask extends MasterTask {
         this.table = table;
         this.slaveAddr = new ArrayList<>(slaveAddr);
         this.aid = aid;
-        this.masterType = Constants.MasterType.UPGRADE;
+        this.type = Constants.MasterType.UPGRADE;
+    }
+
+    @Override
+    public String toString() {
+        return "MasterUpgradeTask{" +
+                "slaveAddr=" + slaveAddr +
+                ", aid=" + aid +
+                ", table='" + table + '\'' +
+                ", masterType=" + type +
+                '}';
     }
 }
