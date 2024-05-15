@@ -4,12 +4,10 @@ import signal
 
 from .zkclient import ZkClient
 from .task_queue import TaskQueue
-from .waiter_dict import WaiterDict
 from .region_cluster import RegionCluster
 from .master_server import MasterServer
 from .watcher import RegionsWatcher
 from .processor import ProcessorDict
-from .waiter_dict.waiter import RegionUpgradeWaiter
 from .processor.util import remote_call
 from .api.m2r import m2r
 
@@ -22,10 +20,9 @@ class Master:
 
         self._zk = ZkClient(self.zk_addr)
         self._queue = TaskQueue()
-        self._waiter = WaiterDict()
         self._cluster = RegionCluster(self.copy_num)
-        self._processors = ProcessorDict(self._cluster, self._queue, self._waiter)
-        self._server = MasterServer(self.server_port, self._queue, self._waiter)
+        self._processors = ProcessorDict(self._cluster)
+        self._server = MasterServer(self.server_port, self._queue)
 
         signal.signal(signal.SIGINT, self.stop)
 
@@ -77,14 +74,10 @@ class Master:
                 table = self._cluster.table(tbl)
 
                 master = self._cluster.find_min_load_among(table.slaves)
+                table.upgrade(master)
+                region.masters += 1
 
-                wid = self._waiter.gen_id()
-                waiter = RegionUpgradeWaiter(wid, master, tbl)
-                self._waiter.add(waiter)
-
-                new_slaves = table.slaves[:]
-                new_slaves.remove(master)
-                remote_call(master, m2r.Client, 'upgrade', tbl, new_slaves, wid)
+                remote_call(master, m2r.Client, 'upgrade', tbl, table.slaves)
 
         self._cluster.print()
 

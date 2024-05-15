@@ -8,15 +8,12 @@ from thrift.TMultiplexedProcessor import TMultiplexedProcessor
 
 from .api.c2m import c2m
 from .handler import C2MHandler
-from .api.m2r import r2m
-from .handler import R2MHandler
 
 
 class MasterServer:
-    def __init__(self, port, queue, waiter):
+    def __init__(self, port, queue):
         processors = {
             'C': c2m.Processor(C2MHandler(queue)),
-            'R': r2m.Processor(R2MHandler(queue, waiter))
         }
         self._thread = ServerThread(port, processors)
 

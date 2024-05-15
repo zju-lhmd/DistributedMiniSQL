@@ -24,16 +24,6 @@ class Table:
     def regions(self):
         return [self.master] + self.slaves
 
-    @property
-    def valid_regions(self):
-        return ([self.master] if self.master else []) + self.slaves
-
-    def remove(self, reg):
-        if self.master == reg:
-            self.master = ''
-        else:
-            self.slaves.remove(reg)
-
     def upgrade(self, slave):
         assert slave in self.slaves
 

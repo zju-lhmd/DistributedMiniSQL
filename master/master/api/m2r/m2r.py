@@ -29,42 +29,38 @@ class Iface(object):
 
 
     """
-    def create(self, table, sql, region_addrs, aid):
+    def create(self, table, sql, slave_addrs):
         """
         Parameters:
          - table
          - sql
-         - region_addrs
-         - aid
+         - slave_addrs
 
         """
         pass
 
-    def drop(self, table, aid):
+    def drop(self, table):
         """
         Parameters:
          - table
-         - aid
 
         """
         pass
 
-    def recover(self, table, region_addrs, aid):
+    def recover(self, table, region_addrs):
         """
         Parameters:
          - table
          - region_addrs
-         - aid
 
         """
         pass
 
-    def upgrade(self, table, slave_addrs, aid):
+    def upgrade(self, table, slave_addrs):
         """
         Parameters:
          - table
          - slave_addrs
-         - aid
 
         """
         pass
@@ -87,82 +83,74 @@ class Client(Iface):
             self._oprot = oprot
         self._seqid = 0
 
-    def create(self, table, sql, region_addrs, aid):
+    def create(self, table, sql, slave_addrs):
         """
         Parameters:
          - table
          - sql
-         - region_addrs
-         - aid
+         - slave_addrs
 
         """
-        self.send_create(table, sql, region_addrs, aid)
+        self.send_create(table, sql, slave_addrs)
 
-    def send_create(self, table, sql, region_addrs, aid):
+    def send_create(self, table, sql, slave_addrs):
         self._oprot.writeMessageBegin('create', TMessageType.ONEWAY, self._seqid)
         args = create_args()
         args.table = table
         args.sql = sql
-        args.region_addrs = region_addrs
-        args.aid = aid
+        args.slave_addrs = slave_addrs
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
 
-    def drop(self, table, aid):
+    def drop(self, table):
         """
         Parameters:
          - table
-         - aid
 
         """
-        self.send_drop(table, aid)
+        self.send_drop(table)
 
-    def send_drop(self, table, aid):
+    def send_drop(self, table):
         self._oprot.writeMessageBegin('drop', TMessageType.ONEWAY, self._seqid)
         args = drop_args()
         args.table = table
-        args.aid = aid
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
 
-    def recover(self, table, region_addrs, aid):
+    def recover(self, table, region_addrs):
         """
         Parameters:
          - table
          - region_addrs
-         - aid
 
         """
-        self.send_recover(table, region_addrs, aid)
+        self.send_recover(table, region_addrs)
 
-    def send_recover(self, table, region_addrs, aid):
+    def send_recover(self, table, region_addrs):
         self._oprot.writeMessageBegin('recover', TMessageType.ONEWAY, self._seqid)
         args = recover_args()
         args.table = table
         args.region_addrs = region_addrs
-        args.aid = aid
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
 
-    def upgrade(self, table, slave_addrs, aid):
+    def upgrade(self, table, slave_addrs):
         """
         Parameters:
          - table
          - slave_addrs
-         - aid
 
         """
-        self.send_upgrade(table, slave_addrs, aid)
+        self.send_upgrade(table, slave_addrs)
 
-    def send_upgrade(self, table, slave_addrs, aid):
+    def send_upgrade(self, table, slave_addrs):
         self._oprot.writeMessageBegin('upgrade', TMessageType.ONEWAY, self._seqid)
         args = upgrade_args()
         args.table = table
         args.slave_addrs = slave_addrs
-        args.aid = aid
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -203,7 +191,7 @@ class Processor(Iface, TProcessor):
         args.read(iprot)
         iprot.readMessageEnd()
         try:
-            self._handler.create(args.table, args.sql, args.region_addrs, args.aid)
+            self._handler.create(args.table, args.sql, args.slave_addrs)
         except TTransport.TTransportException:
             raise
         except Exception:
@@ -214,7 +202,7 @@ class Processor(Iface, TProcessor):
         args.read(iprot)
         iprot.readMessageEnd()
         try:
-            self._handler.drop(args.table, args.aid)
+            self._handler.drop(args.table)
         except TTransport.TTransportException:
             raise
         except Exception:
@@ -225,7 +213,7 @@ class Processor(Iface, TProcessor):
         args.read(iprot)
         iprot.readMessageEnd()
         try:
-            self._handler.recover(args.table, args.region_addrs, args.aid)
+            self._handler.recover(args.table, args.region_addrs)
         except TTransport.TTransportException:
             raise
         except Exception:
@@ -236,7 +224,7 @@ class Processor(Iface, TProcessor):
         args.read(iprot)
         iprot.readMessageEnd()
         try:
-            self._handler.upgrade(args.table, args.slave_addrs, args.aid)
+            self._handler.upgrade(args.table, args.slave_addrs)
         except TTransport.TTransportException:
             raise
         except Exception:
@@ -250,17 +238,15 @@ class create_args(object):
     Attributes:
      - table
      - sql
-     - region_addrs
-     - aid
+     - slave_addrs
 
     """
 
 
-    def __init__(self, table=None, sql=None, region_addrs=None, aid=None,):
+    def __init__(self, table=None, sql=None, slave_addrs=None,):
         self.table = table
         self.sql = sql
-        self.region_addrs = region_addrs
-        self.aid = aid
+        self.slave_addrs = slave_addrs
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -283,17 +269,12 @@ class create_args(object):
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.LIST:
-                    self.region_addrs = []
+                    self.slave_addrs = []
                     (_etype3, _size0) = iprot.readListBegin()
                     for _i4 in range(_size0):
                         _elem5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        self.region_addrs.append(_elem5)
+                        self.slave_addrs.append(_elem5)
                     iprot.readListEnd()
-                else:
-                    iprot.skip(ftype)
-            elif fid == 4:
-                if ftype == TType.I32:
-                    self.aid = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             else:
@@ -314,16 +295,12 @@ class create_args(object):
             oprot.writeFieldBegin('sql', TType.STRING, 2)
             oprot.writeString(self.sql.encode('utf-8') if sys.version_info[0] == 2 else self.sql)
             oprot.writeFieldEnd()
-        if self.region_addrs is not None:
-            oprot.writeFieldBegin('region_addrs', TType.LIST, 3)
-            oprot.writeListBegin(TType.STRING, len(self.region_addrs))
-            for iter6 in self.region_addrs:
+        if self.slave_addrs is not None:
+            oprot.writeFieldBegin('slave_addrs', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRING, len(self.slave_addrs))
+            for iter6 in self.slave_addrs:
                 oprot.writeString(iter6.encode('utf-8') if sys.version_info[0] == 2 else iter6)
             oprot.writeListEnd()
-            oprot.writeFieldEnd()
-        if self.aid is not None:
-            oprot.writeFieldBegin('aid', TType.I32, 4)
-            oprot.writeI32(self.aid)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -346,8 +323,7 @@ create_args.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'table', 'UTF8', None, ),  # 1
     (2, TType.STRING, 'sql', 'UTF8', None, ),  # 2
-    (3, TType.LIST, 'region_addrs', (TType.STRING, 'UTF8', False), None, ),  # 3
-    (4, TType.I32, 'aid', None, None, ),  # 4
+    (3, TType.LIST, 'slave_addrs', (TType.STRING, 'UTF8', False), None, ),  # 3
 )
 
 
@@ -355,14 +331,12 @@ class drop_args(object):
     """
     Attributes:
      - table
-     - aid
 
     """
 
 
-    def __init__(self, table=None, aid=None,):
+    def __init__(self, table=None,):
         self.table = table
-        self.aid = aid
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -378,11 +352,6 @@ class drop_args(object):
                     self.table = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == 2:
-                if ftype == TType.I32:
-                    self.aid = iprot.readI32()
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -396,10 +365,6 @@ class drop_args(object):
         if self.table is not None:
             oprot.writeFieldBegin('table', TType.STRING, 1)
             oprot.writeString(self.table.encode('utf-8') if sys.version_info[0] == 2 else self.table)
-            oprot.writeFieldEnd()
-        if self.aid is not None:
-            oprot.writeFieldBegin('aid', TType.I32, 2)
-            oprot.writeI32(self.aid)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -421,7 +386,6 @@ all_structs.append(drop_args)
 drop_args.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'table', 'UTF8', None, ),  # 1
-    (2, TType.I32, 'aid', None, None, ),  # 2
 )
 
 
@@ -430,15 +394,13 @@ class recover_args(object):
     Attributes:
      - table
      - region_addrs
-     - aid
 
     """
 
 
-    def __init__(self, table=None, region_addrs=None, aid=None,):
+    def __init__(self, table=None, region_addrs=None,):
         self.table = table
         self.region_addrs = region_addrs
-        self.aid = aid
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -464,11 +426,6 @@ class recover_args(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == 3:
-                if ftype == TType.I32:
-                    self.aid = iprot.readI32()
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -489,10 +446,6 @@ class recover_args(object):
             for iter13 in self.region_addrs:
                 oprot.writeString(iter13.encode('utf-8') if sys.version_info[0] == 2 else iter13)
             oprot.writeListEnd()
-            oprot.writeFieldEnd()
-        if self.aid is not None:
-            oprot.writeFieldBegin('aid', TType.I32, 3)
-            oprot.writeI32(self.aid)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -515,7 +468,6 @@ recover_args.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'table', 'UTF8', None, ),  # 1
     (2, TType.LIST, 'region_addrs', (TType.STRING, 'UTF8', False), None, ),  # 2
-    (3, TType.I32, 'aid', None, None, ),  # 3
 )
 
 
@@ -524,15 +476,13 @@ class upgrade_args(object):
     Attributes:
      - table
      - slave_addrs
-     - aid
 
     """
 
 
-    def __init__(self, table=None, slave_addrs=None, aid=None,):
+    def __init__(self, table=None, slave_addrs=None,):
         self.table = table
         self.slave_addrs = slave_addrs
-        self.aid = aid
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -558,11 +508,6 @@ class upgrade_args(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == 3:
-                if ftype == TType.I32:
-                    self.aid = iprot.readI32()
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -583,10 +528,6 @@ class upgrade_args(object):
             for iter20 in self.slave_addrs:
                 oprot.writeString(iter20.encode('utf-8') if sys.version_info[0] == 2 else iter20)
             oprot.writeListEnd()
-            oprot.writeFieldEnd()
-        if self.aid is not None:
-            oprot.writeFieldBegin('aid', TType.I32, 3)
-            oprot.writeI32(self.aid)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -609,7 +550,6 @@ upgrade_args.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'table', 'UTF8', None, ),  # 1
     (2, TType.LIST, 'slave_addrs', (TType.STRING, 'UTF8', False), None, ),  # 2
-    (3, TType.I32, 'aid', None, None, ),  # 3
 )
 fix_spec(all_structs)
 del all_structs
