@@ -1,6 +1,4 @@
-package org.region;
-
-import org.region.ZooKeeperManager;
+package zookeeper;
 
 public class Main {
     public static void main(String[] args) {

@@ -1,4 +1,4 @@
-package org.region;
+package zookeeper;
 
 // Manage zookeeper connection
 import org.apache.curator.framework.CuratorFramework;
@@ -23,7 +23,6 @@ public class ZooKeeperManager {
     public ZooKeeperManager(String zkHost) {
         client = CuratorFrameworkFactory.newClient(zkHost, new ExponentialBackoffRetry(1000, 3));
         client.start();
-
     }
 
     public CuratorFramework getClient() {
