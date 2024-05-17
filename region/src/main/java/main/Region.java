@@ -14,21 +14,36 @@ import task.MasterCreateTask;
 import task.MasterTask;
 import task.RegionTask;
 import utils.MetaTable;
+import zookeeper.ZooKeeperManager;
 
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.net.InetAddress;
 
 public class Region
 {
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) throws UnknownHostException {
+        String ip = InetAddress.getLocalHost().getHostAddress();
         int port = 8080;
         int capacity = 200;
         ArrayBlockingQueue<ClientTask> clientQueue = new ArrayBlockingQueue<>(capacity);
         ArrayBlockingQueue<MasterTask> masterQueue = new ArrayBlockingQueue<>(capacity);
         ArrayBlockingQueue<RegionTask> regionQueue = new ArrayBlockingQueue<>(capacity);
 
+        ZooKeeperManager zooKeeperManager = new ZooKeeperManager("10.214.241.121:2181");
+        String region_path = "/regions/" + ip + ":" + port;
+        String region_name = ip + ":" + port;
+        if (zooKeeperManager.judgeNodeExist("/master")) {
+            System.out.println("master exists");
+            if (zooKeeperManager.judgeNodeExist(region_path)) {
+                zooKeeperManager.deleteNode(region_name);
+            }
+        } else {
+            System.out.println("master not exists");
+        }
+        zooKeeperManager.createNode(region_name);
         RegionServer server = new RegionServer(clientQueue, masterQueue, regionQueue);
 
         new Thread(() -> {

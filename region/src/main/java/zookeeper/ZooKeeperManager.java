@@ -7,7 +7,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 
 public class ZooKeeperManager {
     private CuratorFramework client;
-    private String regionPath = "/region";
+    private String regionPath = "/regions";
     public boolean judgeConnection() {
         return client.getZookeeperClient().isConnected();
     }
@@ -36,6 +36,14 @@ public class ZooKeeperManager {
     public void createNode(String regionName, byte[] data) {
         try {
             client.create().creatingParentsIfNeeded().forPath(regionPath + "/" + regionName, data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createNode(String regionName) {
+        try {
+            client.create().creatingParentsIfNeeded().forPath(regionPath + "/" + regionName);
         } catch (Exception e) {
             e.printStackTrace();
         }
