@@ -9,18 +9,38 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import task.ClientTask;
-import task.MasterCreateTask;
-import task.MasterTask;
-import task.RegionTask;
+//import org.apache.thrift.transport.TT
+import task.*;
+import utils.Constants;
+import utils.JdbcUtil;
 import utils.MetaTable;
+import utils.TableDump;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class Region
 {
+    public static void regionCall(String address, String exec, Constants.RegionType type) throws TException {
+        TTransport transport = null;
+        transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
+        TProtocol protocol = new TBinaryProtocol(transport);
+        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "R");
+        r2r.Client client = new r2r.Client(server_protocol);
+        transport.open();
+        switch (type) {
+            case SYNC:
+                client.sync(exec);
+                break;
+            case COPY:
+                client.copy(exec);
+                break;
+        }
+        transport.close();
+    }
+
     public static void main( String[] args )
     {
         int port = 8080;
@@ -62,59 +82,72 @@ public class Region
             }
         }).start();
 
-//        new Thread(() -> {
-//            HashMap<String, MetaTable> tableHashMap = new HashMap<>();
-//
-//            while (true) {
-//                MasterTask task = null;
-//                try {
-//                    task = masterQueue.take();
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//                switch (task.type) {
-//                    case CREATE:
-//                        System.out.println("[Master CREATE] " + task);
-//                        tableHashMap.put(task.table, new MetaTable(true, ((MasterCreateTask) task).regionAddr));
-//                        for (String address: ((MasterCreateTask) task).regionAddr) {
-//                            TTransport transport = null;
-//                            try {
-//                                transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
-//                            } catch (TTransportException e) {
-//                                System.out.println("[Master Error] address " + address + " can not connect!");
-//                                throw new RuntimeException(e);
-//                            }
-//                            TProtocol protocol = new TBinaryProtocol(transport);
-//                            TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "R");
-//                            r2r.Client client = new r2r.Client(server_protocol);
-//                            try {
-//                                transport.open();
-//                            } catch (TTransportException e) {
-//                                System.out.println("[Master Error] transport open error!");
-//                                throw new RuntimeException(e);
-//                            }
-//                            try {
-//                                client.sync(((MasterCreateTask) task).sql);
-//                            } catch (TException e) {
-//                                System.out.println(e.getMessage());
-//                                throw new RuntimeException(e);
-//                            }
-//                            transport.close();
-//                        }
-//
-//                        break;
-//                    case DROP:
-//                        System.out.println("[Master DROP] " + task);
-//                        break;
-//                    case RECOVER:
-//                        System.out.println("[Master RECOVER] " + task);
-//                        break;
-//                    case UPGRADE:
-//                        System.out.println("[Master UPGRADE] " + task);
-//                        break;
-//                }
-//            }
-//        }).start();
+        new Thread(() -> {
+            HashMap<String, MetaTable> tableHashMap = new HashMap<>();
+
+            while (true) {
+                MasterTask task = null;
+                try {
+                    task = masterQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                switch (task.type) {
+                    case CREATE:
+                        System.out.println("[Master CREATE] " + task);
+                        MasterCreateTask masterTask = (MasterCreateTask) task;
+                        try {
+                            DBConnection.update(masterTask.sql);
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                        tableHashMap.put(task.table, new MetaTable(true, masterTask.regionAddr));
+                        for (String address: masterTask.regionAddr) {
+                            try {
+                                regionCall(address, masterTask.sql, Constants.RegionType.SYNC);
+                            } catch (TException e) {
+                                System.out.println("[Master Error] table create error!");
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        break;
+                    case DROP:
+                        System.out.println("[Master DROP] " + task);
+                        MasterDropTask dropTask = (MasterDropTask) task;
+                        String sql = "drop table " + dropTask.table;
+                        try {
+                            DBConnection.update(sql);
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                        for (String address : tableHashMap.get(dropTask.table).slaveAddress) {
+                            try {
+                                regionCall(address, sql, Constants.RegionType.SYNC);
+                            } catch (TException e) {
+                                System.out.println("[Master Error] table drop error!");
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        break;
+                    case RECOVER:
+                        System.out.println("[Master RECOVER] " + task);
+                        MasterRecoverTask recoverTask = (MasterRecoverTask) task;
+                        String address = recoverTask.regionAddr.get(0);
+                        try {
+                            regionCall(address, recoverTask.table, Constants.RegionType.COPY);
+                        } catch (TException e) {
+                            System.out.println("[Master Error] table recover error!");
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    case UPGRADE:
+                        System.out.println("[Master UPGRADE] " + task);
+                        MasterUpgradeTask upgradeTask = (MasterUpgradeTask) task;
+                        tableHashMap.replace(upgradeTask.table, new MetaTable(true, upgradeTask.slaveAddr));
+                        break;
+                }
+            }
+        }).start();
 
         new Thread(() -> {
             while (true) {
@@ -136,6 +169,12 @@ public class Region
                         break;
                     case COPY:
                         System.out.println("[COPY] " + task);
+                        try {
+                            TableDump.dbBackUpMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", task.exec);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+
                         break;
                 }
             }
