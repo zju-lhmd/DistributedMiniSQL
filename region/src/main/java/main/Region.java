@@ -47,6 +47,7 @@ public class Region
         String ip = InetAddress.getLocalHost().getHostAddress();
         int port = 8080;
         int capacity = 200;
+        HashMap<String, MetaTable> tableHashMap = new HashMap<>();
         ArrayBlockingQueue<ClientTask> clientQueue = new ArrayBlockingQueue<>(capacity);
         ArrayBlockingQueue<MasterTask> masterQueue = new ArrayBlockingQueue<>(capacity);
         ArrayBlockingQueue<RegionTask> regionQueue = new ArrayBlockingQueue<>(capacity);
@@ -97,8 +98,6 @@ public class Region
         }).start();
 
         new Thread(() -> {
-            HashMap<String, MetaTable> tableHashMap = new HashMap<>();
-
             while (true) {
                 MasterTask task = null;
                 try {
@@ -109,16 +108,16 @@ public class Region
                 switch (task.type) {
                     case CREATE:
                         System.out.println("[Master CREATE] " + task);
-                        MasterCreateTask masterTask = (MasterCreateTask) task;
+                        MasterCreateTask createTask = (MasterCreateTask) task;
                         try {
-                            DBConnection.update(masterTask.sql);
+                            DBConnection.update(createTask.sql);
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
-                        tableHashMap.put(task.table, new MetaTable(true, masterTask.regionAddr));
-                        for (String address: masterTask.regionAddr) {
+                        tableHashMap.put(createTask.table, new MetaTable(true, createTask.regionAddr));
+                        for (String address: createTask.regionAddr) {
                             try {
-                                regionCall(address, masterTask.sql, Constants.RegionType.SYNC);
+                                regionCall(address, createTask.table + "@@@" + createTask.sql, Constants.RegionType.SYNC);
                             } catch (TException e) {
                                 System.out.println("[Master Error] table create error!");
                                 throw new RuntimeException(e);
@@ -173,13 +172,21 @@ public class Region
                 }
                 switch (task.type) {
                     case SYNC:
+                        System.out.println("[SYNC] " + task);
+                        String table = task.exec.split("@@@")[0];
+                        String sql = task.exec.split("@@@")[1];
+                        if (sql.toLowerCase().contains("create")) {
+                            tableHashMap.put(table, new MetaTable(false, null));
+                        }
+                        if (sql.toLowerCase().contains("drop")) {
+                            tableHashMap.remove(table);
+                        }
                         try {
-                            DBConnection.update(task.exec);
+                            DBConnection.update(sql);
                         } catch (SQLException e) {
                             System.out.println(e.getMessage());
                             throw new RuntimeException(e);
                         }
-                        System.out.println("[SYNC] " + task);
                         break;
                     case COPY:
                         System.out.println("[COPY] " + task);

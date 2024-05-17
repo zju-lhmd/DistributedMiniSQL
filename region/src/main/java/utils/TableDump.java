@@ -5,10 +5,33 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class TableDump {
 
     private static final String DbName = "ddb";
+
+    /**
+     * 查询数据库中的表
+     * @param username 账号
+     * @param pwd 密码
+     * @param url 地址
+     * @return tableNames 表名
+     */
+    public static List showTables(String username, String pwd, String url) throws Exception {
+        // mysql -hlocalhost -uroot -proot -e "use ddb; show tables;"
+        StringBuilder sb = new StringBuilder();
+        sb.append("mysql");
+        sb.append(" -h").append(url);
+        sb.append(" -u").append(username);
+        sb.append(" -p").append(pwd);
+        sb.append(" -e \"use ").append(DbName).append("; show tables;\"");
+        System.out.println("cmd命令为："+sb.toString());
+
+        Process process = getProcess(sb);
+        System.out.println("开始查询表");
+
+    }
 
     /**
      * 备份mysql数据库
