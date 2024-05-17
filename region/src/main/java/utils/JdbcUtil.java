@@ -26,6 +26,18 @@ public class JdbcUtil {
         }
     }
 
+    public static String getUrl() {
+        return url;
+    }
+
+    public static String getUser() {
+        return user;
+    }
+
+    public static String getPassword() {
+        return password;
+    }
+
     // 返回数据库连接
     public static Connection getConnection() {
         try {
