@@ -218,6 +218,11 @@ public class Region
             }
         }).start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("region server shutdown");
+            zooKeeperManager.close();
+        }));
+
         System.out.println("region server listening on " + port);
         server.start(port);
     }
