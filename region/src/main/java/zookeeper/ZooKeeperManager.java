@@ -29,17 +29,26 @@ public class ZooKeeperManager {
 
     public void init(String region_name) {
         System.out.println("region_name:" + region_name);
+        String tables = DBConnection.showTables();
         if (judgeNodeExist("master")) {
             System.out.println("master exists");
             if (judgeNodeExist(region_name)) {
                 deleteNode(region_name);
                 System.out.println("delete node" + region_name);
+                try {
+                    if (tables != null) {
+                        for (String table : tables.split(" ")) {
+                            DBConnection.update("drop table " + table + ";");
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         } else {
             System.out.println("master not exists");
         }
         createNode(region_name);
-        String tables = DBConnection.showTables();
         System.out.println("Table names:" + tables);
         setNodeData(region_name, tables.getBytes());
     }
