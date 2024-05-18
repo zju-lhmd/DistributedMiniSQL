@@ -76,7 +76,7 @@ public class TableDump {
         try {
             StringBuilder sb = new StringBuilder();
             sb.append("mysql");
-            sb.append(" -h").append(url);
+            sb.append(" -h").append("127.0.0.1");
             sb.append(" -u").append(username);
             sb.append(" -p").append(pwd);
             sb.append(" ").append(DbName).append(" <");
@@ -85,8 +85,6 @@ public class TableDump {
 
             Process process = getProcess(sb);
             System.out.println("开始还原数据");
-            // 等待上述命令执行完毕后打印log
-            process.waitFor();
             InputStream is = process.getInputStream();
             BufferedReader bf = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String line = null;
