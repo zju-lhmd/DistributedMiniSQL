@@ -1,4 +1,6 @@
 .DS_Store
 .idea
-./sql
+sql/
 __pycache__
+thrifts/gen-java
+thrifts/gen-py
