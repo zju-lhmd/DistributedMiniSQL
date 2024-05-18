@@ -63,12 +63,6 @@ public class Region
         transport.close();
     }
     public static void main( String[] args ) throws UnknownHostException {
-        try {
-            TableDump.dbBackUpMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", "students");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
         String ip = InetAddress.getLocalHost().getHostAddress();
         int port = 8080;
         int capacity = 200;
