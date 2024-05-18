@@ -9,21 +9,18 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-DROP TABLE IF EXISTS `students`;
+DROP TABLE IF EXISTS `persons2`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `students` (
-  `id` int DEFAULT NULL,
-  `name` varchar(10) DEFAULT NULL,
-  `age` int DEFAULT NULL,
-  UNIQUE KEY `id` (`id`)
+CREATE TABLE `persons2` (
+  `Id_P` int DEFAULT NULL,
+  `LastName` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `students` WRITE;
-/*!40000 ALTER TABLE `students` DISABLE KEYS */;
-INSERT INTO `students` VALUES (1,'user1',1),(2,'user2',2);
-/*!40000 ALTER TABLE `students` ENABLE KEYS */;
+LOCK TABLES `persons2` WRITE;
+/*!40000 ALTER TABLE `persons2` DISABLE KEYS */;
+/*!40000 ALTER TABLE `persons2` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
