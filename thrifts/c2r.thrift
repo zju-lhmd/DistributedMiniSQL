@@ -11,7 +11,7 @@ struct Hits {
 
 service c2r {
     oneway void read(1: string client_addr, 2: string sql);
-    oneway void write(1: string client_addr, 2: string sql);
+    oneway void write(1: string client_addr, 2: string table, 3: string sql);
 }
 
 service r2c {

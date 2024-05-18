@@ -11,4 +11,13 @@ public class RegionTask {
         this.buff = buff;
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        return "RegionTask{" +
+                "exec='" + exec + '\'' +
+                ", type=" + type +
+                ", buff=" + buff +
+                '}';
+    }
 }

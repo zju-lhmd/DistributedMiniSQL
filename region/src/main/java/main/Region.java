@@ -101,6 +101,9 @@ public class Region
                         try {
                             DBConnection.update(task.sql);
                             clientCall(task.clientAddr, null, Constants.ClientType.WRITE);
+                            for (String address: tableHashMap.get(task.table).slaveAddress) {
+                                regionCall(address, task.table + "@@@" + task.sql, Constants.RegionType.SYNC);
+                            }
                         } catch (SQLException | TException e) {
                             e.printStackTrace();
 //                            throw new RuntimeException(e);
