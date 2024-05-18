@@ -74,6 +74,10 @@ public class Region
         ZooKeeperManager zooKeeperManager = new ZooKeeperManager("10.214.241.121:2181");
         String region_name = ip + ":" + port;
         zooKeeperManager.init(region_name);
+        String[] tables = DBConnection.showTables().split(" ");
+        for (String table: tables) {
+            tableHashMap.put(table, new MetaTable(false, null));
+        }
 
         RegionServer server = new RegionServer(clientQueue, masterQueue, regionQueue);
 
