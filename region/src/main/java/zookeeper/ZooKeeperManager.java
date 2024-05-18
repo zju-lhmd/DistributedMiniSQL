@@ -38,6 +38,8 @@ public class ZooKeeperManager {
         } else {
             System.out.println("master not exists");
         }
+        if (!judgeNodeExist(region_name))
+            deleteNode(region_name);
         createNode(region_name);
         String tables = DBConnection.showTables();
         System.out.println("Table names:" + tables);
