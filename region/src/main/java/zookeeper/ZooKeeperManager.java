@@ -28,7 +28,7 @@ public class ZooKeeperManager {
     }
 
     public void init(String region_name) {
-
+        System.out.println("region_name:" + region_name);
         if (judgeNodeExist("master")) {
             System.out.println("master exists");
             if (judgeNodeExist(region_name)) {
