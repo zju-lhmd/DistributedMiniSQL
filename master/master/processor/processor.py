@@ -16,6 +16,7 @@ class ProcessorDict:
 
     def process(self, task):
         print('[Master] Process ' + task.__class__.__name__)
+        print('Args: ' + str(task.__dict__))
         self._dict[task.__class__.__name__].process(task)
 
 
@@ -34,6 +35,8 @@ class ClientQueryProcessor(BaseProcessor):
             remote_call(task.client, m2c.Client, 'queryResp', 1, [])
             return
         remote_call(task.client, m2c.Client, 'queryResp', 0, table.regions)
+
+        print('Result: ' + str(table))
 
 
 class ClientCreateProcessor(BaseProcessor):
@@ -62,6 +65,8 @@ class ClientCreateProcessor(BaseProcessor):
 
         remote_call(task.client, m2c.Client, 'createResp', 0, table.regions)
 
+        print('Result: ' + str(table))
+
 
 class ClientDropProcessor(BaseProcessor):
     def __init__(self, cluster):
@@ -86,13 +91,17 @@ class ClientDropProcessor(BaseProcessor):
 
         remote_call(task.client, m2c.Client, 'dropResp', 0)
 
+        print('Result: ' + str(table))
+
 
 class RegionOnProcessor(BaseProcessor):
     def __init__(self, cluster):
         self._cluster = cluster
 
     def process(self, task):
-        self._cluster.add_region(task.region)
+        region = self._cluster.add_region(task.region)
+
+        print('Result: ' + str(region))
 
 
 class RegionOffProcessor(BaseProcessor):
@@ -132,3 +141,5 @@ class RegionOffProcessor(BaseProcessor):
                 table.slaves.append(slave)
                 region = self._cluster.region(slave)
                 region.tables.append(tbl)
+
+            print('Result: ' + str(table))
