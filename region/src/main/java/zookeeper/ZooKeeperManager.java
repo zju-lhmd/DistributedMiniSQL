@@ -13,9 +13,9 @@ public class ZooKeeperManager {
     public boolean judgeConnection() {
         return client.getZookeeperClient().isConnected();
     }
-    public boolean judgeNodeExist(String regionName) {
+    public boolean judgeNodeExist(String nodePath) {
         try {
-            return client.checkExists().forPath(regionPath + "/" + regionName) != null;
+            return client.checkExists().forPath(nodePath) != null;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -30,20 +30,21 @@ public class ZooKeeperManager {
     public void init(String region_name) {
         System.out.println("region_name:" + region_name);
         String tables = DBConnection.showTables();
-        if (judgeNodeExist("master")) {
+        if (judgeNodeExist("/master")) {
             System.out.println("master exists");
-            if (judgeNodeExist(region_name)) {
+            if (judgeNodeExist(regionPath + "/" + region_name)) {
                 deleteNode(region_name);
                 System.out.println("delete node" + region_name);
-                try {
-                    if (tables != null) {
-                        for (String table : tables.split(" ")) {
-                            DBConnection.update("drop table " + table + ";");
-                        }
+            }
+            try {
+                if (tables != null) {
+                    for (String table : tables.split(" ")) {
+                        System.out.println("drop table " + table);
+                        DBConnection.update("drop table " + table + ";");
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } else {
             System.out.println("master not exists");
