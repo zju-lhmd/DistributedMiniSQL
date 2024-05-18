@@ -85,6 +85,8 @@ public class TableDump {
 
             Process process = getProcess(sb);
             System.out.println("开始还原数据");
+            // 等待上述命令执行完毕后打印log
+            process.waitFor();
             InputStream is = process.getInputStream();
             BufferedReader bf = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String line = null;
