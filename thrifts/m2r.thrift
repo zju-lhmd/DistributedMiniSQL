@@ -9,6 +9,6 @@
 service m2r {
     oneway void create(1: string table, 2: string sql, 3: list<string> slave_addrs);
     oneway void drop(1: string table);
-    oneway void recover(1: string table, 2: string region_addrs);
+    oneway void recover(1: string table, 2: string region_addr);
     oneway void upgrade(1: string table, 2: list<string> slave_addrs);
 }
