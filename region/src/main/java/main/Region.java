@@ -10,7 +10,6 @@ import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TFileTransport;
 import task.*;
 import utils.Constants;
 import utils.JdbcUtil;
@@ -21,6 +20,7 @@ import utils.TableDump;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +40,8 @@ public class Region
                 client.sync(exec);
                 break;
             case COPY:
-                client.copy(exec);
+                TableDump.dbBackUpMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", exec);
+                client.copy(exec, ByteBuffer.wrap(TableDump.fileToBinary("./sql/" + exec + ".sql")));
                 break;
         }
         transport.close();
@@ -163,7 +164,7 @@ public class Region
                     case RECOVER:
                         System.out.println("[Master RECOVER] " + task);
                         MasterRecoverTask recoverTask = (MasterRecoverTask) task;
-                        String address = recoverTask.regionAddr.get(0);
+                        String address = recoverTask.regionAddr;
                         try {
                             regionCall(address, recoverTask.table, Constants.RegionType.COPY);
                         } catch (TException e) {
@@ -208,12 +209,9 @@ public class Region
                         break;
                     case COPY:
                         System.out.println("[COPY] " + task);
-                        try {
-                            TableDump.dbBackUpMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", task.exec);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-
+                        tableHashMap.put(task.exec, new MetaTable(false, null));
+                        TableDump.binaryToFile("./sql/" + task.exec + ".sql", task.buff.array());
+                        TableDump.dbRestoreMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", task.exec);
                         break;
                 }
             }

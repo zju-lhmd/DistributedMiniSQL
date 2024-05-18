@@ -5,11 +5,11 @@ import utils.Constants;
 import java.util.ArrayList;
 
 public class MasterRecoverTask extends MasterTask {
-    public ArrayList<String> regionAddr;
+    public String regionAddr;
 
-    public MasterRecoverTask(String table, ArrayList<String> regionAddr) {
+    public MasterRecoverTask(String table, String regionAddr) {
         this.table = table;
-        this.regionAddr = new ArrayList<>(regionAddr);
+        this.regionAddr = regionAddr;
         this.type = Constants.MasterType.RECOVER;
     }
 

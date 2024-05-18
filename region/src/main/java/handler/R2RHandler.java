@@ -15,32 +15,18 @@ public class R2RHandler implements r2r.Iface {
     @Override
     public void sync(String sql) throws TException {
         try {
-            queue.put(new RegionTask(sql, Constants.RegionType.SYNC));
+            queue.put(new RegionTask(sql, null, Constants.RegionType.SYNC));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void copy(String table) throws TException {
+    public void copy(String name, java.nio.ByteBuffer buff) throws TException {
         try {
-            queue.put(new RegionTask(table, Constants.RegionType.COPY));
+            queue.put(new RegionTask(name, buff, Constants.RegionType.COPY));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void syncResp(int state) throws TException {
-        if (state == 0) {
-            System.out.println("Synchronize Success!");
-        }
-    }
-
-    @Override
-    public void copyResp(int state, String dump) throws TException {
-        if (state == 0) {
-            System.out.println("Copy Success!");
         }
     }
 }

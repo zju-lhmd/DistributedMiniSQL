@@ -32,9 +32,9 @@ public class M2RHandler implements m2r.Iface {
     }
 
     @Override
-    public void recover(String table, List<String> regionAddr) throws TException {
+    public void recover(String table, String regionAddr) throws TException {
         try {
-            queue.put(new MasterRecoverTask(table, (ArrayList<String>) regionAddr));
+            queue.put(new MasterRecoverTask(table, regionAddr));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
