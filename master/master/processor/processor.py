@@ -117,8 +117,9 @@ class RegionOffProcessor(BaseProcessor):
                 table.master = ''
 
                 slave = self._cluster.find_min_load_without(table.slaves)
+                dumper = self._cluster.find_min_load_among(table.slaves)
 
-                remote_call(slave, m2r.Client, 'recover', tbl, table.slaves)
+                remote_call(dumper, m2r.Client, 'recover', tbl, slave)
 
                 master = self._cluster.find_min_load_among(table.slaves)
 
@@ -135,8 +136,9 @@ class RegionOffProcessor(BaseProcessor):
                 table.slaves.remove(task.region)
 
                 slave = self._cluster.find_min_load_without(table.regions)
+                dumper = self._cluster.find_min_load_among(table.regions)
 
-                remote_call(slave, m2r.Client, 'recover', tbl, table.regions)
+                remote_call(dumper, m2r.Client, 'recover', tbl, slave)
 
                 table.slaves.append(slave)
                 region = self._cluster.region(slave)
