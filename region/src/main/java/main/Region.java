@@ -49,7 +49,7 @@ public class Region
     public static void clientCall(String address, Hits hits, Constants.ClientType type) throws TException {
         TTransport transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
         TProtocol protocol = new TBinaryProtocol(transport);
-        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "C");
+        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "R");
         r2c.Client client = new r2c.Client(server_protocol);
         transport.open();
         switch (type) {

@@ -46,11 +46,11 @@ public class DBConnection {
             for (String key : map.keySet()) {
                 record.append(map.get(key)).append(" ");
             }
-            arr.add(record.toString());
+            arr.add(record.toString().trim());
         }
         // 关闭数据库连接
         JdbcUtil.closeConnection(connection);
-        return new Hits(schema.toString(), arr);
+        return new Hits(schema.toString().trim(), arr);
     }
 
     public static String showTables() {
@@ -71,7 +71,7 @@ public class DBConnection {
             JdbcUtil.closeStatement(stmt);
             JdbcUtil.closeResultSet(tables);
 
-            return sb.toString();
+            return sb.toString().trim();
         } catch (SQLException e) {
             e.printStackTrace();
         }
