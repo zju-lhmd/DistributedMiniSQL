@@ -7,10 +7,9 @@ import java.util.ArrayList;
 public class MasterUpgradeTask extends MasterTask {
     public ArrayList<String> slaveAddr;
 
-    public MasterUpgradeTask(String table, ArrayList<String> slaveAddr, int aid) {
+    public MasterUpgradeTask(String table, ArrayList<String> slaveAddr) {
         this.table = table;
         this.slaveAddr = new ArrayList<>(slaveAddr);
-        this.aid = aid;
         this.type = Constants.MasterType.UPGRADE;
     }
 
@@ -18,9 +17,8 @@ public class MasterUpgradeTask extends MasterTask {
     public String toString() {
         return "MasterUpgradeTask{" +
                 "slaveAddr=" + slaveAddr +
-                ", aid=" + aid +
                 ", table='" + table + '\'' +
-                ", masterType=" + type +
+                ", type=" + type +
                 '}';
     }
 }

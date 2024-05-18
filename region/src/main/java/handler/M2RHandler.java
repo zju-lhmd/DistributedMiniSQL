@@ -14,36 +14,36 @@ public class M2RHandler implements m2r.Iface {
         this.queue = masterQueue;
     }
     @Override
-    public void create(String table, String sql, List<String> regionAddr, int aid) throws TException {
+    public void create(String table, String sql, List<String> regionAddr) throws TException {
         try {
-            queue.put(new MasterCreateTask(table, sql, (ArrayList<String>) regionAddr, aid));
+            queue.put(new MasterCreateTask(table, sql, (ArrayList<String>) regionAddr));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void drop(String table, int aid) throws TException {
+    public void drop(String table) throws TException {
         try {
-            queue.put(new MasterDropTask(table, aid));
+            queue.put(new MasterDropTask(table));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void recover(String table, List<String> regionAddr, int aid) throws TException {
+    public void recover(String table, List<String> regionAddr) throws TException {
         try {
-            queue.put(new MasterRecoverTask(table, (ArrayList<String>) regionAddr, aid));
+            queue.put(new MasterRecoverTask(table, (ArrayList<String>) regionAddr));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void upgrade(String table, List<String> slaveAddr, int aid) throws TException {
+    public void upgrade(String table, List<String> slaveAddr) throws TException {
         try {
-            queue.put(new MasterUpgradeTask(table, (ArrayList<String>) slaveAddr, aid));
+            queue.put(new MasterUpgradeTask(table, (ArrayList<String>) slaveAddr));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

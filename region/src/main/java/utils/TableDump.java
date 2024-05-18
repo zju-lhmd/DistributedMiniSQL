@@ -12,28 +12,6 @@ public class TableDump {
     private static final String DbName = "ddb";
 
     /**
-     * 查询数据库中的表
-     * @param username 账号
-     * @param pwd 密码
-     * @param url 地址
-     * @return tableNames 表名
-     */
-    public static List showTables(String username, String pwd, String url) throws Exception {
-        // mysql -hlocalhost -uroot -proot -e "use ddb; show tables;"
-        StringBuilder sb = new StringBuilder();
-        sb.append("mysql");
-        sb.append(" -h").append(url);
-        sb.append(" -u").append(username);
-        sb.append(" -p").append(pwd);
-        sb.append(" -e \"use ").append(DbName).append("; show tables;\"");
-        System.out.println("cmd命令为："+sb.toString());
-
-        Process process = getProcess(sb);
-        System.out.println("开始查询表");
-
-    }
-
-    /**
      * 备份mysql数据库
      * @param username 账号
      * @param pwd 密码
@@ -48,28 +26,30 @@ public class TableDump {
         String pathSql = path + tableName + ".sql";
         File fileSql = new File(pathSql);
         File filePath = new File(path);
-        //创建备份sql文件
+        // 创建备份sql文件
         if (!filePath.exists()){
             filePath.mkdirs();
         }
         if (!fileSql.exists()){
             fileSql.createNewFile();
         }
-        // mysqldump -hlocalhost -uroot -p123456 db > /home/back.sql
+        // mysqldump -hlocalhost -uroot -p123456 db --skip-comments > /home/back.sql
         StringBuilder sb = new StringBuilder();
         sb.append("mysqldump");
-        sb.append(" -h").append(url);
+        sb.append(" -h" ).append("127.0.0.1"); // 默认本地数据库
         sb.append(" -u").append(username);
         sb.append(" -p").append(pwd);
-        sb.append(" ").append(dbName).append(" >");
+        sb.append(" ").append(dbName);
+        sb.append(" --skip-comments");
+        sb.append(" >");
         sb.append(pathSql);
         System.out.println("cmd命令为：" + sb.toString());
         System.out.println("开始备份：" + dbName);
 
         Process process = getProcess(sb);
-        //等待上述命令执行完毕后打印log
+        // 等待上述命令执行完毕后打印log
         process.waitFor();
-        //输出返回的错误信息
+        // 输出返回的错误信息
         StringBuilder mes = new StringBuilder();
         String tmp = "";
         BufferedReader error = new BufferedReader(new InputStreamReader(process.getErrorStream()));

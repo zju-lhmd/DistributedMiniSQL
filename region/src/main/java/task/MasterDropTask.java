@@ -3,18 +3,16 @@ package task;
 import utils.Constants;
 
 public class MasterDropTask extends MasterTask {
-    public MasterDropTask(String table, int aid) {
+    public MasterDropTask(String table) {
         this.table = table;
-        this.aid = aid;
         this.type = Constants.MasterType.DROP;
     }
 
     @Override
     public String toString() {
         return "MasterDropTask{" +
-                "aid=" + aid +
-                ", table='" + table + '\'' +
-                ", masterType=" + type +
+                "table='" + table + '\'' +
+                ", type=" + type +
                 '}';
     }
 }

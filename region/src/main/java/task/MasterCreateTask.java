@@ -7,11 +7,10 @@ import java.util.ArrayList;
 public class MasterCreateTask extends MasterTask {
     public String sql;
     public ArrayList<String> regionAddr;
-    public MasterCreateTask(String table, String sql, ArrayList<String> regionAddr, int aid) {
+    public MasterCreateTask(String table, String sql, ArrayList<String> regionAddr) {
         this.sql = sql;
         this.regionAddr = new ArrayList<>(regionAddr);
         this.table = table;
-        this.aid = aid;
         this.type = Constants.MasterType.CREATE;
     }
 
@@ -20,9 +19,8 @@ public class MasterCreateTask extends MasterTask {
         return "MasterCreateTask{" +
                 "sql='" + sql + '\'' +
                 ", regionAddr=" + regionAddr +
-                ", aid=" + aid +
                 ", table='" + table + '\'' +
-                ", masterType=" + type +
+                ", type=" + type +
                 '}';
     }
 }

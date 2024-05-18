@@ -1,5 +1,7 @@
 package main;
 
+import api.Hits;
+import api.r2c;
 import api.r2r;
 import database.DBConnection;
 import org.apache.thrift.TException;
@@ -8,8 +10,7 @@ import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-//import org.apache.thrift.transport.TT
+import org.apache.thrift.transport.TFileTransport;
 import task.*;
 import utils.Constants;
 import utils.JdbcUtil;
@@ -17,6 +18,8 @@ import utils.MetaTable;
 import zookeeper.ZooKeeperManager;
 import utils.TableDump;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -27,9 +30,8 @@ import java.net.InetAddress;
 public class Region
 {
     public static void regionCall(String address, String exec, Constants.RegionType type) throws TException {
-        TTransport transport = null;
-        transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
-        TProtocol protocol = new TBinaryProtocol(transport);
+        TTransport transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
+        TBinaryProtocol protocol = new TBinaryProtocol(transport);
         TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "R");
         r2r.Client client = new r2r.Client(server_protocol);
         transport.open();
@@ -43,7 +45,29 @@ public class Region
         }
         transport.close();
     }
+    public static void clientCall(String address, Hits hits, Constants.ClientType type) throws TException {
+        TTransport transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
+        TProtocol protocol = new TBinaryProtocol(transport);
+        TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "C");
+        r2c.Client client = new r2c.Client(server_protocol);
+        transport.open();
+        switch (type) {
+            case READ:
+                client.readResp(0, hits);
+                break;
+            case WRITE:
+                client.writeResp(0);
+                break;
+        }
+        transport.close();
+    }
     public static void main( String[] args ) throws UnknownHostException {
+        try {
+            TableDump.dbBackUpMysql(JdbcUtil.getUser(), JdbcUtil.getPassword(), JdbcUtil.getUrl(), "./sql/", "students");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         String ip = InetAddress.getLocalHost().getHostAddress();
         int port = 8080;
         int capacity = 200;
@@ -53,17 +77,9 @@ public class Region
         ArrayBlockingQueue<RegionTask> regionQueue = new ArrayBlockingQueue<>(capacity);
 
         ZooKeeperManager zooKeeperManager = new ZooKeeperManager("10.214.241.121:2181");
-        String region_path = "/regions/" + ip + ":" + port;
         String region_name = ip + ":" + port;
-        if (zooKeeperManager.judgeNodeExist("/master")) {
-            System.out.println("master exists");
-            if (zooKeeperManager.judgeNodeExist(region_path)) {
-                zooKeeperManager.deleteNode(region_name);
-            }
-        } else {
-            System.out.println("master not exists");
-        }
-        zooKeeperManager.createNode(region_name);
+        zooKeeperManager.init(region_name);
+
         RegionServer server = new RegionServer(clientQueue, masterQueue, regionQueue);
 
         new Thread(() -> {
@@ -78,9 +94,10 @@ public class Region
                     case READ:
                         System.out.println("[CLIENT READ] " + task);
                         try {
-                            DBConnection.query(task.sql);
-                        } catch (SQLException e) {
-                            System.out.println(e.getMessage());
+                            Hits hits = DBConnection.query(task.sql);
+                            clientCall(task.clientAddr, hits, Constants.ClientType.READ);
+                        } catch (SQLException | TException e) {
+                            e.printStackTrace();
 //                            throw new RuntimeException(e);
                         }
                         break;
@@ -88,8 +105,9 @@ public class Region
                         System.out.println("[CLIENT WRITE] " + task);
                         try {
                             DBConnection.update(task.sql);
-                        } catch (SQLException e) {
-                            System.out.println(e.getMessage());
+                            clientCall(task.clientAddr, null, Constants.ClientType.WRITE);
+                        } catch (SQLException | TException e) {
+                            e.printStackTrace();
 //                            throw new RuntimeException(e);
                         }
                         break;
@@ -135,7 +153,7 @@ public class Region
                         }
                         for (String address : tableHashMap.get(dropTask.table).slaveAddress) {
                             try {
-                                regionCall(address, sql, Constants.RegionType.SYNC);
+                                regionCall(address, dropTask.table + "@@@" +sql, Constants.RegionType.SYNC);
                             } catch (TException e) {
                                 System.out.println("[Master Error] table drop error!");
                                 throw new RuntimeException(e);

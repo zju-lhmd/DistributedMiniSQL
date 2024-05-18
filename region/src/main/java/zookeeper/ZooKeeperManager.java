@@ -1,9 +1,11 @@
 package zookeeper;
 
 // Manage zookeeper connection
+import database.DBConnection;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.CreateMode;
 
 public class ZooKeeperManager {
     private CuratorFramework client;
@@ -11,9 +13,9 @@ public class ZooKeeperManager {
     public boolean judgeConnection() {
         return client.getZookeeperClient().isConnected();
     }
-    public boolean judgeNodeExist(String path) {
+    public boolean judgeNodeExist(String regionName) {
         try {
-            return client.checkExists().forPath(path) != null;
+            return client.checkExists().forPath(regionPath + "/" + regionName) != null;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -23,6 +25,23 @@ public class ZooKeeperManager {
     public ZooKeeperManager(String zkHost) {
         client = CuratorFrameworkFactory.newClient(zkHost, new ExponentialBackoffRetry(1000, 3));
         client.start();
+    }
+
+    public void init(String region_name) {
+
+        if (judgeNodeExist("master")) {
+            System.out.println("master exists");
+            if (judgeNodeExist(region_name)) {
+                deleteNode(region_name);
+                System.out.println("delete node" + region_name);
+            }
+        } else {
+            System.out.println("master not exists");
+        }
+        createNode(region_name);
+        String tables = DBConnection.showTables();
+        System.out.println("Table names:" + tables);
+        setNodeData(region_name, tables.getBytes());
     }
 
     public CuratorFramework getClient() {
@@ -43,7 +62,7 @@ public class ZooKeeperManager {
 
     public void createNode(String regionName) {
         try {
-            client.create().creatingParentsIfNeeded().forPath(regionPath + "/" + regionName);
+            client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(regionPath + "/" + regionName);
         } catch (Exception e) {
             e.printStackTrace();
         }
