@@ -27,7 +27,7 @@ class Master:
         signal.signal(signal.SIGINT, self.stop)
 
     def start(self):
-        print('[Master] Zkclient start')
+        print('[Zkclient] Connect to ' + self.zk_addr)
         self._zk.start()
 
         # attempt to register master
@@ -38,7 +38,7 @@ class Master:
         ok, path = self._zk.create('/master', data=server_addr.encode('utf-8'), ephemeral=True)
         if ok is False:
             self.stop()
-        print('[Master] Register on ZooKeeper')
+        print('[Master] Register "/master" on ZooKeeper')
 
         # initialize metadata
         self._init_cluster()
@@ -88,7 +88,7 @@ class Master:
 
     def stop(self, signum=None, frame=None):
         self._zk.stop()
-        print('[Master] Zkclient stop')
+        print('[Zkclient] Disconnect')
 
         print('[Master] Exit')
         sys.exit(0)

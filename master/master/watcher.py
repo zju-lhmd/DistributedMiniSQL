@@ -16,7 +16,7 @@ class RegionsWatcher(BaseWatcher):
     def __call__(self, children):
         # print some useful information
         if self._ignore is True:
-            print('[Watcher] Region watcher register')
+            print('[ZkClient] Region watcher register')
             self._ignore = False
             return
 
@@ -25,10 +25,12 @@ class RegionsWatcher(BaseWatcher):
         added_regions = list(set(children) - set(self._regions))
 
         for reg in added_regions:
+            print('[ZkClient] Region online ' + reg)
             task = RegionOnTask(reg)
             self._queue.put_ahead(task)
 
         for reg in removed_regions:
+            print('[ZkClient] Region offline ' + reg)
             task = RegionOffTask(reg)
             self._queue.put_ahead(task)
 
