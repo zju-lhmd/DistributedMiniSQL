@@ -153,6 +153,7 @@ public class Region
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
+                        tableHashMap.remove(dropTask.table);
                         for (String address : tableHashMap.get(dropTask.table).slaveAddress) {
                             try {
                                 regionCall(address, dropTask.table + "@@@" +sql, Constants.RegionType.SYNC);

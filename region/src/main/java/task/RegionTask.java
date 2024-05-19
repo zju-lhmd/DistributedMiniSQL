@@ -2,7 +2,7 @@ package task;
 
 import utils.Constants;
 
-public class RegionTask {
+public class RegionTask extends Task {
     public String exec;
     public Constants.RegionType type;
     public java.nio.ByteBuffer buff;

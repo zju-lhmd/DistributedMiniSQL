@@ -2,7 +2,7 @@ package task;
 
 import utils.Constants;
 
-public class MasterTask {
+public class MasterTask extends Task {
     public String table;
     public Constants.MasterType type;
 }
