@@ -173,7 +173,6 @@ public class Region
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
-                        tableHashMap.remove(dropTask.table);
                         for (String address : tableHashMap.get(dropTask.table).slaveAddress) {
                             try {
                                 regionCall(address, dropTask.table + "@@@" +sql, Constants.RegionType.SYNC);
@@ -182,6 +181,7 @@ public class Region
                                 throw new RuntimeException(e);
                             }
                         }
+                        tableHashMap.remove(dropTask.table);
                         break;
                     case RECOVER:
                         System.out.println("[Master RECOVER] " + task);
