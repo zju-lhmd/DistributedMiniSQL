@@ -4,7 +4,7 @@ target/
 !**/src/test/**/target/
 sql/
 
-*.properties
+db.properties
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
