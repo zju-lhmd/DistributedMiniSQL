@@ -14,28 +14,37 @@ import java.nio.file.*;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientManager {
     private CacheManager cacheManager;
     private MasterConnector masterConnector;
     private String myHost;
-    private final int myPort1 = 8081;
-    private final int myPort2 = 8082;
-    private final String masterHost = "10.192.192.131";
+    private int myPort1 = 8081;
+    private int myPort2 = 8082;
+    private final String masterHost = "10.193.135.166";
     private final int masterPort = 3932;
-    public ClientManager() {
+    private static final Logger logger = LoggerFactory.getLogger(ClientManager.class);
+
+    public ClientManager(int myPort1, int myPort2) {
         try {
             myHost = InetAddress.getLocalHost().getHostAddress();
-            System.out.println(myHost);
             masterConnector = new MasterConnector(masterHost, masterPort, myHost, myPort1);
         } catch (Exception e) {
-            System.out.print("无法连接至网络");
-            e.printStackTrace();
+            System.out.print("无法连接至网络！");
         }
-        cacheManager = new CacheManager(1000);
+        cacheManager = new CacheManager(100);
+        this.myPort1 = myPort1;
+        this.myPort2 = myPort2;
     }
 
     public void execSingleSql(String sql) {
+        if(sql.equalsIgnoreCase("print cache")) {
+            System.out.println("当前缓存内容: ");
+            System.out.println(cacheManager.cache);
+            return;
+        }
         Statement statement;
         int sql_type = -1;
         String tableName="";
@@ -58,7 +67,6 @@ public class ClientManager {
                 TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
                 List<String> tableList = tablesNamesFinder.getTableList(statement);
                 tableName = tableList.get(0);
-                //System.out.println("Table: " + tableList.get(0)); // 获取列表中的第一个表名
             } else if (statement instanceof CreateTable) {
                 sql_type = 2;
                 CreateTable createStatement = (CreateTable) statement;
@@ -76,25 +84,17 @@ public class ClientManager {
             // 语法错误！
             sql_type = -1;
             System.out.println("SQL语法错误: " + sql);
-            //e.printStackTrace();
         } catch (Exception e) {
             System.out.println("不支持的指令: " + sql);
         }
         if(sql_type == -1) return;
 
-        System.out.println(sql_type);
-        System.out.println(tableName);
-
-        boolean finish = true;
+        boolean finish = false;
         List<String> tableLoc=null;
         if(sql_type==0||sql_type==1) {
             tableLoc = cacheManager.searchCache(tableName);
             if(tableLoc==null) {
-                // 缓存未命中
-                System.out.println("缓存未命中");
-                ////// 查询Master
-                /*here
-                */
+                //System.out.println("缓存未命中");
                 tableLoc = query4loc(tableName);
                 if(tableLoc==null) {
                     finish = true;
@@ -103,12 +103,11 @@ public class ClientManager {
                     System.out.println(tableLoc);
                     cacheManager.addCache(tableName,tableLoc);
                 }
-                //tableLoc = new ArrayList<>();
-                //cacheManager.addCache(tableName,tableLoc);
-                //////
+            } else {
+                logger.info("缓存命中: " + tableLoc);
             }
         }
-        finish = true;
+        //finish = true;
         while(!finish) {
             // 检测命中 -> 查询Master -> 交由Master/交由Region -> 未结束 ->
             if((sql_type==0||sql_type==1) && tableLoc == null) {
@@ -123,75 +122,64 @@ public class ClientManager {
             }
             if(sql_type==0) {
                 ////// 交由Region
-                System.out.println("交由Region写");
-                /*here
-                 */
-                System.out.println(tableLoc.get(0));
                 String[] loc = tableLoc.get(0).split(":");
                 String regionHost = loc[0];
                 int regionPost = Integer.parseInt(loc[1]);
-                int result = writeByRegion(regionHost, regionPost, sql);
+                int result = writeByRegion(regionHost, regionPost, sql, tableName);
                 if(result == 0) {
-                    System.out.println("执行成功: " + sql);
+                    System.out.println("写执行完毕: " + sql);
                     finish = true;
+                } else if (result == 3){
+                    finish = true;
+                    break;
                 } else {
-                    System.out.println("执行失败: " + sql);
                     finish = false;
                     tableLoc = null;
                 }
-                //////
             } else if(sql_type==1) {
                 ////// 交由Region
-                System.out.println("交由Region读");
-                /*here
-                 */
-                System.out.println(tableLoc.get(1));
                 String[] loc = tableLoc.get(1).split(":");
                 String regionHost = loc[0];
                 int regionPost = Integer.parseInt(loc[1]);
                 Hits result = readByRegion(regionHost, regionPost, sql);
                 if(result != null) {
-                    System.out.println("执行成功: " + sql);
-                    List<String> columns = new ArrayList<>(Arrays.asList(result.schema.split("/")));
+                    if(result.schema == null) {
+                        System.out.println("结果为空: " + sql);
+                        break;
+                    }else if(result.records==null) {
+                        break;
+                    }
+                    System.out.println("读执行完毕: " + sql);
+                    List<String> columns = new ArrayList<>(Arrays.asList(result.schema.split(" ")));
                     List<List<String>> rows = new ArrayList<>();
                     for(String record : result.records) {
-                        List<String> row = new ArrayList<>(Arrays.asList(record.split("/")));
+                        List<String> row = new ArrayList<>(Arrays.asList(record.split(" ")));
                         rows.add(row);
                     }
                     printTable(columns, rows);
                     finish = true;
                 } else {
-                    System.out.println("执行失败: " + sql);
                     finish = false;
                     tableLoc = null;
                 }
-                //////
             } else if(sql_type==2) {
                 ////// 交由Master
-                System.out.println("交由Master建");
-                /*here
-                 */
                 List<String> result = createTable(tableName, sql);
                 if(result != null) {
-                    System.out.println("执行成功: " + sql);
+                    System.out.println("建表执行成功: " + sql);
                     cacheManager.addCache(tableName, result);
                 } else {
-                    System.out.println("执行失败: " + sql);
+                    System.out.println("建表执行失败，表已存在: " + sql);
                 }
-                //////
                 finish = true;
             } else {
                 ////// 交由Master
-                System.out.println("交由Master删");
-                //////
-                /*here
-                 */
                 int result = dropTable(tableName);
                 if(result == 0) {
-                    System.out.println("执行成功: " + sql);
+                    System.out.println("删表执行成功: " + sql);
                     cacheManager.removeCache(tableName);
                 } else {
-                    System.out.println("执行失败: " + sql);
+                    System.out.println("删建表执行失败，表不存在: " + sql);
                 }
                 finish = true;
             }
@@ -205,9 +193,9 @@ public class ClientManager {
                 execSingleSql(line);
             }
         } catch (NoSuchFileException e) {
-            System.out.println("文件不存在");
+            System.out.println("文件不存在！");
         } catch (IOException e) {
-            System.out.println("未知的读取错误");
+            System.out.println("读取错误！");
         }
     }
     // 绘制列表
@@ -258,30 +246,44 @@ public class ClientManager {
     }
     private Hits readByRegion(String regionHost, int regionPost, String sql) {
         try {
+            logger.info("尝试向[" + regionHost + ":" + regionPost + "]发送读请求...");
             RegionConnector regionConnector = new RegionConnector(regionHost, regionPost, myHost, myPort2);
             CompletableFuture<Hits> future = regionConnector.read(myHost+":"+myPort2, sql);
             Hits result = future.get();
             regionConnector.closeConnection();
+            if(result.schema!=null && result.schema.equals("")) {
+                logger.info("地址错误，正在重新查询地址...");
+                return null;
+            } else if(result.schema!=null && result.records==null) {
+                System.out.println("SQL执行错误: "+result.schema);
+                return result;
+            }
             return result;
         } catch (Exception e) {
-            //连接失败，尝试重试
-            System.out.println("连接错误...请等待后重试");
+            logger.info("地址错误，正在重新查询地址...");
             return null;
         }
     }
-    private int writeByRegion(String regionHost, int regionPost, String sql) {
+    private int writeByRegion(String regionHost, int regionPost, String sql, String tableName) {
         try {
+            logger.info("尝试向[" + regionHost + ":" + regionPost + "]发送读请求...");
             RegionConnector regionConnector = new RegionConnector(regionHost, regionPost, myHost, myPort2);
-            CompletableFuture<Hits> future = regionConnector.write(myHost+":"+myPort2, sql);
+            CompletableFuture<Hits> future = regionConnector.write(myHost+":"+myPort2, sql, tableName);
             Hits result = future.get();
             regionConnector.closeConnection();
-            if(result!=null)
-                return 0;
-            else
-                return 1;
+            if(result!=null) {
+                if(result.schema.equals(""))
+                    return 0;
+                else {
+                    System.out.println("SQL执行时发生错误: "+ result.schema);
+                    return 3;
+                }
+            } else {
+                logger.info("地址错误，正在重新查询地址...");
+                return 2;
+            }
         } catch (Exception e) {
-            //连接失败，尝试重试
-            System.out.println("连接错误...请等待后重试");
+            logger.info("地址错误，正在重新查询地址...");
             return 2;
         }
     }
@@ -289,10 +291,12 @@ public class ClientManager {
         try {
             CompletableFuture<List<String>> future = masterConnector.query(myHost+":"+myPort1, tableName);
             List<String> result = future.get();
+            if(result!=null) {
+                logger.info("向Master查询 " + tableName + " 地址，结果为: " + result);
+            }
             return result;
         } catch (Exception e) {
             //发生错误
-            System.out.println("连接错误...请等待后重试");
             return null;
         }
     }
@@ -304,7 +308,6 @@ public class ClientManager {
             return result;
         } catch (Exception e) {
             //连接失败，尝试重试
-            System.out.println("连接错误...请等待后重试");
             return null;
         }
     }
@@ -319,7 +322,6 @@ public class ClientManager {
                 return 1;
         } catch (Exception e) {
             //连接失败，尝试重试
-            System.out.println("连接错误...请等待后重试");
             return 2;
         }
     }

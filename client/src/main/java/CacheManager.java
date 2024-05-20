@@ -1,7 +1,7 @@
 import java.util.*;
 
 public class CacheManager {
-    private Map<String, List<String>> cache;
+    public Map<String, List<String>> cache;
     private int capacity;
 
     public CacheManager(int capacity) {

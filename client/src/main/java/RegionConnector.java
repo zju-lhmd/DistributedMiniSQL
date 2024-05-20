@@ -13,11 +13,12 @@ public class RegionConnector implements r2c.Iface {
     private TServer server;
 
     public RegionConnector(String regionHost, int regionPort, String clientAddr, int clientPort) throws Exception {
+        int timeout = 5000;
         transport = new TSocket(regionHost, regionPort);
+        ((TSocket) this.transport).setTimeout(timeout);
         transport.open();
         TMultiplexedProtocol multiplexProtocolClient = new TMultiplexedProtocol(new TBinaryProtocol(transport), "C");
         client = new c2r.Client(multiplexProtocolClient);
-        System.out.println("Started client to " + regionHost + ":" + regionPort);
 
         TServerTransport serverTransport = new TServerSocket(clientPort);
         r2c.Processor<RegionConnector> processor = new r2c.Processor<>(this);
@@ -25,7 +26,6 @@ public class RegionConnector implements r2c.Iface {
         multiplexedProcessor.registerProcessor("R", processor);
         server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(multiplexedProcessor));
         CompletableFuture.runAsync(() -> server.serve());
-        System.out.println("Starting server on " + clientAddr + ":" + clientPort);
     }
 
     public CompletableFuture<Hits> read(String clientAddr, String sql) throws Exception {
@@ -34,9 +34,9 @@ public class RegionConnector implements r2c.Iface {
         return future;
     }
 
-    public CompletableFuture<Hits> write(String clientAddr, String sql) throws Exception {
+    public CompletableFuture<Hits> write(String clientAddr, String sql, String tableName) throws Exception {
         future = new CompletableFuture<>();
-        client.write(clientAddr, sql);
+        client.write(clientAddr, tableName, sql);
         return future;
     }
 
@@ -45,18 +45,25 @@ public class RegionConnector implements r2c.Iface {
         if (future != null) {
             if(state == 0)
                 future.complete(hits);
-            else
-                future.complete(null);
+            else if(state == 2)
+                future.complete(new Hits("", new ArrayList<>()));
+            else {
+                hits.records=null;
+                future.complete(hits);
+            }
         }
     }
 
     @Override
-    public void writeResp(int state) {
+    public void writeResp(int state, String msg) {
         if (future != null) {
-            if(state == 0)
+            if (state == 0)
                 future.complete(new Hits("", new ArrayList<>()));
-            else
+            else if (state == 2) {
                 future.complete(null);
+            } else {
+                future.complete(new Hits(msg, null));
+            }
         }
     }
 
