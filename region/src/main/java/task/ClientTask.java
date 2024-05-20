@@ -2,7 +2,7 @@ package task;
 
 import utils.Constants;
 
-public class ClientTask {
+public class ClientTask extends Task {
     public String clientAddr;
     public String table;
     public String sql;

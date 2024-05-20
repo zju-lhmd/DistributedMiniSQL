@@ -33,8 +33,8 @@ class ClientQueryProcessor(BaseProcessor):
         table = self._cluster.table(task.table)
         if table is None:
             remote_call(task.client, m2c.Client, 'queryResp', 1, [])
-            return
-        remote_call(task.client, m2c.Client, 'queryResp', 0, table.regions)
+        else:
+            remote_call(task.client, m2c.Client, 'queryResp', 0, table.regions)
 
         print('Result: ' + str(table))
 
@@ -47,23 +47,22 @@ class ClientCreateProcessor(BaseProcessor):
         table = self._cluster.table(task.table)
         if table is not None:
             remote_call(task.client, m2c.Client, 'createResp', 1, [])
-            return
-
-        master, *slaves = self._cluster.find_n_min_load()
-        region = self._cluster.region(master)
-        region.tables.append(task.table)
-        region.masters += 1
-        for slave in slaves:
-            region = self._cluster.region(slave)
+        else:
+            master, *slaves = self._cluster.find_n_min_load()
+            region = self._cluster.region(master)
             region.tables.append(task.table)
+            region.masters += 1
+            for slave in slaves:
+                region = self._cluster.region(slave)
+                region.tables.append(task.table)
 
-        table = self._cluster.add_table(task.table)
-        table.master = master
-        table.slaves = slaves
+            table = self._cluster.add_table(task.table)
+            table.master = master
+            table.slaves = slaves
 
-        remote_call(master, m2r.Client, 'create', task.table, task.sql, slaves)
+            remote_call(master, m2r.Client, 'create', task.table, task.sql, slaves)
 
-        remote_call(task.client, m2c.Client, 'createResp', 0, table.regions)
+            remote_call(task.client, m2c.Client, 'createResp', 0, table.regions)
 
         print('Result: ' + str(table))
 
@@ -76,20 +75,19 @@ class ClientDropProcessor(BaseProcessor):
         table = self._cluster.table(task.table)
         if table is None:
             remote_call(task.client, m2c.Client, 'dropResp', 1)
-            return
+        else:
+            self._cluster.remove_table(task.table)
 
-        self._cluster.remove_table(task.table)
-
-        region = self._cluster.region(table.master)
-        region.tables.remove(task.table)
-        region.masters -= 1
-        for slave in table.slaves:
-            region = self._cluster.region(slave)
+            region = self._cluster.region(table.master)
             region.tables.remove(task.table)
+            region.masters -= 1
+            for slave in table.slaves:
+                region = self._cluster.region(slave)
+                region.tables.remove(task.table)
 
-        remote_call(table.master, m2r.Client, 'drop', task.table)
+            remote_call(table.master, m2r.Client, 'drop', task.table)
 
-        remote_call(task.client, m2c.Client, 'dropResp', 0)
+            remote_call(task.client, m2c.Client, 'dropResp', 0)
 
         print('Result: ' + str(table))
 

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-public class M2RHandler implements m2r.Iface {
+public class M2RHandler implements m2r.Iface, Handler {
     BlockingQueue<MasterTask> queue;
     public M2RHandler(BlockingQueue<MasterTask> masterQueue) {
         this.queue = masterQueue;

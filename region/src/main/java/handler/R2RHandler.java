@@ -7,7 +7,7 @@ import utils.Constants;
 
 import java.util.concurrent.BlockingQueue;
 
-public class R2RHandler implements r2r.Iface {
+public class R2RHandler implements r2r.Iface, Handler {
     public BlockingQueue<RegionTask> queue;
     public R2RHandler(BlockingQueue<RegionTask> regionQueue) {
         this.queue = regionQueue;

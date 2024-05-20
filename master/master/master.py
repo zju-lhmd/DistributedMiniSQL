@@ -14,7 +14,7 @@ from .api.m2r import m2r
 
 class Master:
     def __init__(self):
-        self.zk_addr = '127.0.0.1:2181'
+        self.zk_addr = '10.214.241.121:2181'
         self.copy_num = 2
         self.server_port = 3932
 
@@ -59,7 +59,7 @@ class Master:
         for reg in regs:
             region = self._cluster.add_region(reg)
             data, stat = self._zk.get(f'/regions/{reg}')
-            if data is not None:
+            if data is not None and data != b'':
                 tbls = data.decode('utf-8').split(' ')
                 region.tables = tbls
 
@@ -69,15 +69,16 @@ class Master:
                     self._cluster.add_table(tbl)
                 self._cluster.table(tbl).slaves.append(reg)
 
-            # upgrade a slave on each table to satisfy Master-Slave
-            for tbl in self._cluster.tables:
-                table = self._cluster.table(tbl)
+        # upgrade a slave on each table to satisfy Master-Slave
+        for tbl in self._cluster.tables:
+            table = self._cluster.table(tbl)
 
-                master = self._cluster.find_min_load_among(table.slaves)
-                table.upgrade(master)
-                region.masters += 1
+            master = self._cluster.find_min_load_among(table.slaves)
+            table.upgrade(master)
+            region = self._cluster.region(master)
+            region.masters += 1
 
-                remote_call(master, m2r.Client, 'upgrade', tbl, table.slaves)
+            remote_call(master, m2r.Client, 'upgrade', tbl, table.slaves)
 
         self._cluster.print()
 

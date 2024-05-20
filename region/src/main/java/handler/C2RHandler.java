@@ -6,7 +6,7 @@ import utils.Constants;
 
 import java.util.concurrent.BlockingQueue;
 
-public class C2RHandler implements c2r.Iface {
+public class C2RHandler implements c2r.Iface, Handler {
     BlockingQueue<ClientTask> queue;
     public C2RHandler(BlockingQueue<ClientTask> clientQueue) {
         queue = clientQueue;

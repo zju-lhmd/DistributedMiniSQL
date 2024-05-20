@@ -16,5 +16,5 @@ service c2r {
 
 service r2c {
     oneway void readResp(1: i32 state, 2: Hits hits);
-    oneway void writeResp(1: i32 state);
+    oneway void writeResp(1: i32 state, 2: string message);
 }
