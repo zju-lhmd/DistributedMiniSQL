@@ -96,7 +96,11 @@ public class Region
                             Hits hits = DBConnection.query(task.sql);
                             clientCall(task.clientAddr, hits, Constants.ClientType.READ);
                         } catch (SQLException | TException e) {
-                            e.printStackTrace();
+                            try {
+                                clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.READ);
+                            } catch (TException ex) {
+                                throw new RuntimeException(ex);
+                            }
 //                            throw new RuntimeException(e);
                         }
                         break;
@@ -109,7 +113,11 @@ public class Region
                                 regionCall(address, task.table + "@@@" + task.sql, Constants.RegionType.SYNC);
                             }
                         } catch (SQLException | TException e) {
-                            e.printStackTrace();
+                            try {
+                                clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.WRITE);
+                            } catch (TException ex) {
+                                throw new RuntimeException(ex);
+                            }
 //                            throw new RuntimeException(e);
                         }
                         break;
