@@ -46,7 +46,7 @@ public class Region
         }
         transport.close();
     }
-    public static void clientCall(String address, Hits hits, Constants.ClientType type) throws TException {
+    public static void clientCall(String address, Hits hits, Constants.ClientType type, int state) throws TException {
         TTransport transport = new TSocket(address.split(":")[0], Integer.parseInt(address.split(":")[1]), 30000);
         TProtocol protocol = new TBinaryProtocol(transport);
         TMultiplexedProtocol server_protocol = new TMultiplexedProtocol(protocol, "R");
@@ -54,10 +54,14 @@ public class Region
         transport.open();
         switch (type) {
             case READ:
-                client.readResp(0, hits);
+                client.readResp(state, hits);
                 break;
             case WRITE:
-                client.writeResp(0);
+                if (state == 0) {
+                    client.writeResp(state, null);
+                } else {
+                    client.writeResp(state, hits.schema);
+                }
                 break;
         }
         transport.close();
@@ -94,31 +98,39 @@ public class Region
                         System.out.println("[CLIENT READ] " + task);
                         try {
                             Hits hits = DBConnection.query(task.sql);
-                            clientCall(task.clientAddr, hits, Constants.ClientType.READ);
-                        } catch (SQLException | TException e) {
+                            clientCall(task.clientAddr, hits, Constants.ClientType.READ, 0);
+                        } catch (SQLException e) {
                             try {
-                                clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.READ);
+                                if (e.getErrorCode() == 1146) { // table not exist
+                                    clientCall(task.clientAddr, new Hits("", null), Constants.ClientType.READ, 2);
+                                } else {
+                                    clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.READ, 1);
+                                }
                             } catch (TException ex) {
+                                e.printStackTrace();
                                 throw new RuntimeException(ex);
                             }
-//                            throw new RuntimeException(e);
+                        } catch (TException e) {
+                            throw new RuntimeException(e);
                         }
                         break;
                     case WRITE:
                         System.out.println("[CLIENT WRITE] " + task);
                         try {
                             DBConnection.update(task.sql);
-                            clientCall(task.clientAddr, null, Constants.ClientType.WRITE);
                             for (String address: tableHashMap.get(task.table).slaveAddress) {
                                 regionCall(address, task.table + "@@@" + task.sql, Constants.RegionType.SYNC);
                             }
-                        } catch (SQLException | TException e) {
+                            clientCall(task.clientAddr, null, Constants.ClientType.WRITE, 0); // respond to client when all sql execution success
+                        } catch (SQLException e) {
                             try {
-                                clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.WRITE);
+                                clientCall(task.clientAddr, new Hits(e.getMessage(), null), Constants.ClientType.WRITE, 1);
                             } catch (TException ex) {
                                 throw new RuntimeException(ex);
                             }
 //                            throw new RuntimeException(e);
+                        } catch (TException e) {
+                            throw new RuntimeException(e);
                         }
                         break;
                 }
