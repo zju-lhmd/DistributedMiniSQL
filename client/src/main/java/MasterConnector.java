@@ -17,7 +17,6 @@ public class MasterConnector implements m2c.Iface {
         transport.open();
         TMultiplexedProtocol multiplexProtocolClient = new TMultiplexedProtocol(new TBinaryProtocol(transport), "C");
         client = new c2m.Client(multiplexProtocolClient);
-        System.out.println("Started client to " + masterHost + ":" + masterPort);
 
         TServerTransport serverTransport = new TServerSocket(clientPort);
         m2c.Processor<MasterConnector> processor = new m2c.Processor<>(this);
@@ -25,7 +24,6 @@ public class MasterConnector implements m2c.Iface {
         multiplexedProcessor.registerProcessor("M", processor);
         server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(multiplexedProcessor));
         CompletableFuture.runAsync(() -> server.serve());
-        System.out.println("Starting server on " + clientAddr + ":" + clientPort);
     }
 
     public CompletableFuture<List<String>> query(String clientAddr, String table) throws Exception {
